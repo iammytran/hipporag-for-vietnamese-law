@@ -7,7 +7,7 @@ from typing import Union, Optional, List, Dict, Any, Tuple, Literal
 import re
 import ast
 from .prompts.filter_default_prompt_vietnamese_law import best_dspy_prompt_vn_law
-from .. import DSPyFilter
+from .rerank import DSPyFilter
 
 class Fact(BaseModel):
     fact: list[list[str]] = Field(description="A list of facts, each fact is a list of 3 strings: [subject, predicate, object]")

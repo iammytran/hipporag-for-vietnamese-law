@@ -3,14 +3,10 @@ from typing import Dict, Tuple
 import os 
 from tqdm import tqdm
 
-from ..information_extraction import OpenIE
 from .openie_openai import ChunkInfo
 from ..utils.misc_utils import NerRawOutput, TripleRawOutput
 from ..utils.logging_utils import get_logger
-from ..prompts import PromptTemplateManager
-from ..llm.transformers_offline import TransformersOffline
-from .. import TransformersOfflineOpenIE
-
+from .openie_transformers_offline import TransformersOfflineOpenIE
 
 logger = get_logger(__name__)
 

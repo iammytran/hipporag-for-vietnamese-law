@@ -23,17 +23,18 @@ from .embedding_model import _get_embedding_model_class, BaseEmbeddingModel
 from .embedding_store import EmbeddingStore
 from .information_extraction import OpenIE
 from .information_extraction.openie_vllm_offline import VLLMOfflineOpenIE
-from .information_extraction.openie_transformers_offline_vn_law import TransformersOfflineOpenIE
+from .information_extraction.openie_transformers_offline_vn_law import TransformersOfflineOpenIEVnLaw
 from .evaluation.retrieval_eval import RetrievalRecall
 from .evaluation.qa_eval import QAExactMatch, QAF1Score
 from .prompts.linking import get_query_instruction
 from .prompts.prompt_template_manager import PromptTemplateManager
-from .rerank import DSPyFilterVnLaw
+from .rerank_vn_law import DSPyFilterVnLaw
 from .utils.misc_utils import *
 from .utils.misc_utils import NerRawOutput, TripleRawOutput
 from .utils.embed_utils import retrieve_knn
 from .utils.typing import Triple
 from .utils.config_utils import BaseConfig
+from .HippoRAG import HippoRAG
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,7 @@ class HippoRAGVnLaw(HippoRAG):
                  embedding_base_url=None,
                  azure_endpoint=None,
                  azure_embedding_endpoint=None):
-        super().__int__(global_config,
+        super().__init__(global_config,
                         save_dir,
                         llm_model_name,
                         llm_base_url,
