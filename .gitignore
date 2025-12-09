@@ -15,9 +15,8 @@ __pycache__/
 nohup_out/
 # Ignore outputs directory
 outputs/
-# Ignore data directory
-data/
 # Ignore the bash script to clear files under outputs and logs directories
 clear_outputs_and_logs.sh
 # Ignore the env file
 .env
+*.egg-info/

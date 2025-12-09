@@ -40,7 +40,7 @@ class TransformersOffline:
         import os
         self.model_name = model_name
         self.model = AutoModelForCausalLM.from_pretrained(model_name, device_map='auto', torch_dtype = torch.bfloat16)
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, padding_side="left")
         
         if cache_filename is None:
             cache_filename = f'{model_name.replace("/", "_")}_cache.sqlite'
