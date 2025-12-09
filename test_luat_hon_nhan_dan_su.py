@@ -14,6 +14,12 @@ import tiktoken
 from src.hipporag import HippoRAGVnLaw
 from src.hipporag.utils.config_utils import BaseConfig
 
+# Đặt ở đầu file thực thi chính của bạn
+logging.basicConfig(
+    level=logging.INFO, 
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
 def chunk_text_by_tokens(text: str, encoding: tiktoken.Encoding, chunk_size: int = 10) -> List[str]:
     """
     Chia một văn bản lớn thành các chunk nhỏ hơn dựa trên số lượng token.
