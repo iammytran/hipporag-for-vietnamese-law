@@ -61,12 +61,12 @@ def main():
     docs = all_chunks
 
     save_dir = 'outputs/transformer_test'  # Define save directory for HippoRAG objects (each LLM/Embedding model combination will create a new subdirectory)
-    llm_model_name = 'Transformers/Qwen/Qwen2.5-3BB-Instruct' # Any OpenAI model name
+    llm_model_name = 'Transformers/Qwen/Qwen2.5-3B-Instruct' # Any OpenAI model name
     embedding_model_name = 'Transformers/BAAI/bge-m3' # Embedding model name (NV-Embed, GritLM or Contriever for now)
 
     global_config = BaseConfig(
         openie_mode='Transformers-offline',
-        information_extraction_model_name='Transformers/Qwen/Qwen2.5-3BB-Instruct'
+        information_extraction_model_name='Transformers/Qwen/Qwen2.5-3B-Instruct'
     )
 
     # Startup a HippoRAG instance
