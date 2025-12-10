@@ -90,11 +90,11 @@ class HippoRAGVnLaw(HippoRAG):
 
         ner_results_dict, triple_results_dict = reformat_openie_results(all_openie_info)
 
-        print("\\n--- NER Results ---")
-        pprint.pprint(ner_results_dict)
-        print("--- Triple Results ---")
-        pprint.pprint(triple_results_dict)
-        print("--- End of Results ---\\n")
+        # print("\\n--- NER Results ---")
+        # pprint.pprint(ner_results_dict)
+        # print("--- Triple Results ---")
+        # pprint.pprint(triple_results_dict)
+        # print("--- End of Results ---\\n")
 
         assert len(chunk_to_rows) == len(ner_results_dict) == len(triple_results_dict), f"len(chunk_to_rows): {len(chunk_to_rows)}, len(ner_results_dict): {len(ner_results_dict)}, len(triple_results_dict): {len(triple_results_dict)}"
 
@@ -105,13 +105,13 @@ class HippoRAGVnLaw(HippoRAG):
         entity_nodes, chunk_triple_entities = extract_entity_nodes(chunk_triples)
         facts = flatten_facts(chunk_triples)
 
-        print("\n--- Chunk Triples ---")
-        pprint.pprint(chunk_triples)
-        print("\n--- Entity Nodes ---")
-        pprint.pprint(entity_nodes)
-        print("\n--- Facts ---")
-        pprint.pprint(facts)
-        print("\n--- End of Data Store Prep ---\n")
+        # print("\n--- Chunk Triples ---")
+        # pprint.pprint(chunk_triples)
+        # print("\n--- Entity Nodes ---")
+        # pprint.pprint(entity_nodes)
+        # print("\n--- Facts ---")
+        # pprint.pprint(facts)
+        # print("\n--- End of Data Store Prep ---\n")
 
         logger.info(f"Encoding Entities")
         self.entity_embedding_store.insert_strings(entity_nodes)
@@ -189,15 +189,18 @@ class HippoRAGVnLaw(HippoRAG):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         file_path = os.path.join(results_dir, f"qa_results_{timestamp}.json")
 
+
         results_to_save = []
         for solution in queries_solutions:
+            top_3_docs = [
+                    {"doc": doc, "score": float(score)} 
+                    for doc, score in zip(solution.docs[:3], solution.doc_scores[:3])
+                ]
+            
             results_to_save.append({
                 "question": solution.question,
                 "answer": solution.answer,
-                "retrieved_docs": [
-                    {"doc": doc, "score": float(score)} 
-                    for doc, score in zip(solution.docs, solution.doc_scores)
-                ]
+                "retrieved_docs": top_3_docs
             })
 
         with open(file_path, 'w', encoding='utf-8') as f:
