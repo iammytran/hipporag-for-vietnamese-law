@@ -175,7 +175,6 @@ def load_law_docs():
             reader = PdfReader(f)
             for page in reader.pages:
                 text = page.extract_text()
-                print(f"text {text}")
                 if text:
                     full_text += text + "\n"
         # import pytesseract
