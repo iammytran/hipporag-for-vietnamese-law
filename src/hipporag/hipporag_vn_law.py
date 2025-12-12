@@ -282,7 +282,7 @@ class HippoRAGVnLaw(HippoRAG):
         for query_solution_idx, query_solution in tqdm(enumerate(queries), desc="Extraction Answers from LLM Response"):
             response_content = all_response_message[query_solution_idx]
             try:
-                pred_ans = response_content.split('Answer:')[1].strip()
+                pred_ans = response_content.rpartition("Trả lời:")[2].strip()
             except Exception as e:
                 logger.warning(f"Error in parsing the answer from the raw LLM QA inference response: {str(e)}!")
                 pred_ans = response_content
