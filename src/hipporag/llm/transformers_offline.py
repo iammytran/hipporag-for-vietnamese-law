@@ -48,7 +48,7 @@ class TransformersOffline:
             cache_dir = os.path.join(global_config.save_dir, "llm_cache")
         self.cache_file_name = os.path.join(cache_dir, cache_filename)
     
-    def infer(self, messages: List[TextChatMessage], max_tokens=2048):
+    def infer(self, messages: List[TextChatMessage], max_tokens=4096):
         logger.info(f"Calling Transformers offline, # of messages {len(messages)}")
         messages_list = [messages]
         prompt_text = convert_text_chat_messages_to_input_string(messages_list, self.tokenizer)
