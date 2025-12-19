@@ -189,7 +189,6 @@ class HippoRAGVnLaw(HippoRAG):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         file_path = os.path.join(results_dir, f"qa_results_{timestamp}.json")
 
-
         results_to_save = []
         for solution in queries_solutions:
             top_3_docs = [
@@ -282,8 +281,8 @@ class HippoRAGVnLaw(HippoRAG):
         for query_solution_idx, query_solution in tqdm(enumerate(queries), desc="Extraction Answers from LLM Response"):
             response_content = all_response_message[query_solution_idx]
             try:
-                pred_ans = response_content.strip()
-                # pred_ans = response_content.rpartition("\n\nTrả lời:")[2].strip()
+                # pred_ans = response_content.strip()
+                pred_ans = response_content.rpartition("\n\nTrả lời:")[2].strip()
             except Exception as e:
                 logger.warning(f"Error in parsing the answer from the raw LLM QA inference response: {str(e)}!")
                 pred_ans = response_content

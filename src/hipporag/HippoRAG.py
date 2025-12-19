@@ -1468,6 +1468,7 @@ class HippoRAG:
 
                 phrases_and_ids.add((phrase, phrase_id))
 
+        # lấy điểm trung bình phrase weights
         phrase_weights /= number_of_occurs
 
         for phrase, phrase_id in phrases_and_ids:

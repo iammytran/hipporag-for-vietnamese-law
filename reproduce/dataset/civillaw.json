@@ -1,7 +1,7 @@
 [
   {
     "id": "law1",
-    "question": "Hộ gia đình sử dụng đất phi nông nghiệp (không thuê trả tiền hằng năm) có được bồi thường về đất khi Nhà nước thu hồi đất để xây doanh trại quân sự không",
+    "question": "Hộ gia đình sử dụng đất phi nông nghiệp (không thuê trả tiền hằng năm) có được bồi thường về đất khi Nhà nước thu hồi đất để xây doanh trại quân sự không?",
     "answer": [
       "Có"
     ],
@@ -93,7 +93,7 @@
     "id": "law5",
     "question": "Tìm các bản án có liên quan đến việc thế chấp quyền sử dụng đất, trong đó Tòa án công nhận hiệu lực Hợp đồng thế chấp cho Ngân hàng?",
     "answer": [
-      "Bản án số 16/2021/DS-ST, 776/2024/DS-PT và 178/2024/DS-PT"
+      "Bản án số 16/2021/DS-ST, và 178/2024/DS-PT"
     ],
     "answerable": true,
     "paragraphs": [
