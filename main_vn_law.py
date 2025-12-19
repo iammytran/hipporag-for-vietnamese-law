@@ -123,7 +123,7 @@ def main():
         max_qa_steps=3,
         qa_top_k=5,
         graph_type="facts_and_sim_passage_node_unidirectional",
-        embedding_batch_size=8,
+        embedding_batch_size=6,
         max_new_tokens=None,
         corpus_len=len(corpus),
         openie_mode=args.openie_mode
