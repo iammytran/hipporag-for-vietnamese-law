@@ -311,6 +311,7 @@ class HippoRAGVnLaw(HippoRAG):
             self.prepare_retrieval_objects()
 
         self.get_query_embeddings(queries)
+        print("Print query_to_embedding")
         print(self.query_to_embedding)
 
         retrieval_results = []
