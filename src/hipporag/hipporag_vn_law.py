@@ -176,8 +176,10 @@ class HippoRAGVnLaw(HippoRAG):
 
         if not isinstance(queries[0], QuerySolution):
             if gold_docs is not None:
+                print(f"Có Gold_Docs")
                 queries, overall_retrieval_result = self.retrieve(queries=queries, gold_docs=gold_docs)
             else:
+                print(f"Khôngg có Gold_Docs")
                 queries = self.retrieve(queries=queries)
 
         # Performing QA
@@ -291,3 +293,66 @@ class HippoRAGVnLaw(HippoRAG):
             queries_solutions.append(query_solution)
 
         return queries_solutions, all_response_message, all_metadata
+    
+    def retrieve(self,
+                 queries: List[str],
+                 num_to_retrieve: int = None,
+                 gold_docs: List[List[str]] = None) -> List[QuerySolution] | Tuple[List[QuerySolution], Dict]:
+        retrieve_start_time = time.time()  # Record start time
+
+        if num_to_retrieve is None:
+            num_to_retrieve = self.global_config.retrieval_top_k
+
+        if gold_docs is not None:
+            retrieval_recall_evaluator = RetrievalRecall(global_config=self.global_config)
+
+        if not self.ready_to_retrieve:
+            print("prepare_retrieval_objects dc activated!")
+            self.prepare_retrieval_objects()
+
+        self.get_query_embeddings(queries)
+        print(self.query_to_embedding)
+
+        retrieval_results = []
+
+        for q_idx, query in tqdm(enumerate(queries), desc="Retrieving", total=len(queries)):
+            rerank_start = time.time()
+            query_fact_scores = self.get_fact_scores(query)
+            top_k_fact_indices, top_k_facts, rerank_log = self.rerank_facts(query, query_fact_scores)
+            rerank_end = time.time()
+
+            self.rerank_time += rerank_end - rerank_start
+
+            if len(top_k_facts) == 0:
+                logger.info('No facts found after reranking, return DPR results')
+                sorted_doc_ids, sorted_doc_scores = self.dense_passage_retrieval(query)
+            else:
+                sorted_doc_ids, sorted_doc_scores = self.graph_search_with_fact_entities(query=query,
+                                                                                         link_top_k=self.global_config.linking_top_k,
+                                                                                         query_fact_scores=query_fact_scores,
+                                                                                         top_k_facts=top_k_facts,
+                                                                                         top_k_fact_indices=top_k_fact_indices,
+                                                                                         passage_node_weight=self.global_config.passage_node_weight)
+
+            top_k_docs = [self.chunk_embedding_store.get_row(self.passage_node_keys[idx])["content"] for idx in sorted_doc_ids[:num_to_retrieve]]
+
+            retrieval_results.append(QuerySolution(question=query, docs=top_k_docs, doc_scores=sorted_doc_scores[:num_to_retrieve]))
+
+        retrieve_end_time = time.time()  # Record end time
+
+        self.all_retrieval_time += retrieve_end_time - retrieve_start_time
+
+        logger.info(f"Total Retrieval Time {self.all_retrieval_time:.2f}s")
+        logger.info(f"Total Recognition Memory Time {self.rerank_time:.2f}s")
+        logger.info(f"Total PPR Time {self.ppr_time:.2f}s")
+        logger.info(f"Total Misc Time {self.all_retrieval_time - (self.rerank_time + self.ppr_time):.2f}s")
+
+        # Evaluate retrieval
+        if gold_docs is not None:
+            k_list = [1, 2, 5, 10, 20, 30, 50, 100, 150, 200]
+            overall_retrieval_result, example_retrieval_results = retrieval_recall_evaluator.calculate_metric_scores(gold_docs=gold_docs, retrieved_docs=[retrieval_result.docs for retrieval_result in retrieval_results], k_list=k_list)
+            logger.info(f"Evaluation results for retrieval: {overall_retrieval_result}")
+
+            return retrieval_results, overall_retrieval_result
+        else:
+            return retrieval_results
