@@ -89,7 +89,7 @@ class OpenIE:
 
         # PREPROCESSING
         messages = self.prompt_template_manager.render(
-            name='triple_extraction_vietnamese_law.py',
+            name='triple_extraction_vietnamese_law',
             passage=passage,
             named_entity_json=json.dumps({"named_entities": named_entities})
         )
