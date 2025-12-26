@@ -77,7 +77,7 @@ def main():
     parser.add_argument('--force_openie_from_scratch', type=str, default='false', help='If set to False, will try to first reuse openie results for the corpus if they exist.')
     parser.add_argument('--openie_mode', choices=['online', 'offline'], default='online',
                         help="OpenIE mode, offline denotes using VLLM offline batch mode for indexing, while online denotes")
-    parser.add_argument('--embedding_batch_size', choices=['online', 'offline'], default=32,
+    parser.add_argument('--embedding_batch_size', default=32,
                         help="embedding batch size")
     parser.add_argument('--save_dir', type=str, default='outputs', help='Save directory')
     args = parser.parse_args()
