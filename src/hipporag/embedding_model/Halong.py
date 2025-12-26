@@ -41,7 +41,7 @@ class HalongEmbeddingModel(BaseEmbeddingModel):
 
         config_dict = {
             "embedding_model_name": self.embedding_model_name,
-            "norm": self.global_config.embedding_return_as_normalized,
+            # "norm": self.global_config.embedding_return_as_normalized,
             # "max_seq_length": self.global_config.embedding_max_seq_len,
             "model_init_params": {
                 # "model_name_or_path": self.embedding_model_name2mode_name_or_path[self.embedding_model_name],
@@ -54,7 +54,6 @@ class HalongEmbeddingModel(BaseEmbeddingModel):
                 # **kwargs
             },
             "encode_params": {
-                "max_length": self.global_config.embedding_max_seq_len,  # 32768 from official example,
                 "instruction": "",
                 "batch_size": self.global_config.embedding_batch_size,
                 "num_workers": 32
