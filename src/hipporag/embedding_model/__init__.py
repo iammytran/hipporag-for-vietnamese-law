@@ -6,7 +6,7 @@ from .OpenAI import OpenAIEmbeddingModel
 from .Cohere import CohereEmbeddingModel
 from .Transformers import TransformersEmbeddingModel
 from .VLLM import VLLMEmbeddingModel
-from .Bge_m3 import BgeM3EmbeddingModel
+from .bge_m3 import BgeM3EmbeddingModel
 from .Halong import HalongEmbeddingModel
 
 from ..utils.logging_utils import get_logger
