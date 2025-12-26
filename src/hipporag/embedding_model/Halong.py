@@ -74,12 +74,14 @@ class HalongEmbeddingModel(BaseEmbeddingModel):
         params = deepcopy(self.embedding_config.encode_params)
         if kwargs: params.update(kwargs)
 
-        if "instruction" in kwargs:
-            if kwargs["instruction"] != '':
-                params["instruction"] = f"Instruct: {kwargs['instruction']}\nQuery: "
+        instruction = params.pop("instruction", "")
+        if instruction:
+            texts = [f"Instruct: {instruction}\nQuery: {text}" for text in texts]
             # del params["instruction"]
 
         batch_size = params.pop("batch_size", 16)
+        params.pop("max_length", None)
+        params.pop("num_workers", None)
 
         logger.debug(f"Calling {self.__class__.__name__} with:\n{params}")
         if len(texts) <= batch_size:
@@ -90,7 +92,7 @@ class HalongEmbeddingModel(BaseEmbeddingModel):
             results = []
             for i in range(0, len(texts), batch_size):
                 params["prompts"] = texts[i:i + batch_size]
-                results.append(self.embedding_model.encode(**params))
+                results.append(self.embedding_model.encode(sentences=texts, batch_size=batch_size, **params))
                 pbar.update(batch_size)
             pbar.close()
             results = torch.cat(results, dim=0)
