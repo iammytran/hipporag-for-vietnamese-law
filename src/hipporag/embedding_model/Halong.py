@@ -45,7 +45,7 @@ class HalongEmbeddingModel(BaseEmbeddingModel):
             # "max_seq_length": self.global_config.embedding_max_seq_len,
             "model_init_params": {
                 # "model_name_or_path": self.embedding_model_name2mode_name_or_path[self.embedding_model_name],
-                "pretrained_model_name_or_path": self.embedding_model_name,
+                "model_name_or_path": self.embedding_model_name,
                 "trust_remote_code": True,
                 'device_map': "auto",  # added this line to use multiple GPUs
                 "torch_dtype": self.global_config.embedding_model_dtype,
