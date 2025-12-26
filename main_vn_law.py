@@ -139,7 +139,7 @@ def main():
     hipporag.index(docs)
 
     # Retrieval and QA
-    #hipporag.rag_qa(queries=all_queries, gold_docs=gold_docs, gold_answers=gold_answers)
+    hipporag.rag_qa(queries=all_queries, gold_docs=gold_docs, gold_answers=gold_answers)
 
 if __name__ == "__main__":
     main()
