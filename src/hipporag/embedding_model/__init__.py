@@ -6,7 +6,8 @@ from .OpenAI import OpenAIEmbeddingModel
 from .Cohere import CohereEmbeddingModel
 from .Transformers import TransformersEmbeddingModel
 from .VLLM import VLLMEmbeddingModel
-from .bge_m3 import BgeM3EmbeddingModel
+from .Bge_m3 import BgeM3EmbeddingModel
+from .Halong import HalongEmbeddingModel
 
 from ..utils.logging_utils import get_logger
 
@@ -26,6 +27,8 @@ def _get_embedding_model_class(embedding_model_name: str = "nvidia/NV-Embed-v2")
         return CohereEmbeddingModel
     elif "bge-m3" in embedding_model_name:
         return BgeM3EmbeddingModel
+    elif "halong" in embedding_model_name:
+        return HalongEmbeddingModel
     elif embedding_model_name.startswith("Transformers/"):
         return TransformersEmbeddingModel
     elif embedding_model_name.startswith("VLLM/"):
