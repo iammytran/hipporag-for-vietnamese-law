@@ -330,6 +330,7 @@ class HippoRAGVnLaw(HippoRAG):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         file_path = os.path.join(output_dir, f"query_embeddings_{timestamp}.json")
         facts_output_dir = 'outputs/retrieved_facts'
+        os.makedirs(facts_output_dir, exist_ok=True)
         facts_file_path = os.path.join(facts_output_dir, f"retrieved_facts_{timestamp}.txt")
 
         # Save to JSON
