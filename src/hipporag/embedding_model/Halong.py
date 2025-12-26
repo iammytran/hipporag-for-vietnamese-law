@@ -84,17 +84,7 @@ class HalongEmbeddingModel(BaseEmbeddingModel):
         params.pop("num_workers", None)
 
         logger.debug(f"Calling {self.__class__.__name__} with:\n{params}")
-        if len(texts) <= batch_size:
-            results = self.embedding_model.encode(sentences=texts, batch_size=batch_size,**params)
-        else:
-            pbar = tqdm(total=len(texts), desc="Batch Encoding")
-            results = []
-            for i in range(0, len(texts), batch_size):
-                #params["prompts"] = texts[i:i + batch_size]
-                results.append(self.embedding_model.encode(sentences=texts, batch_size=batch_size, **params))
-                pbar.update(batch_size)
-            pbar.close()
-            results = torch.cat(results, dim=0)
+        results = self.embedding_model.encode(sentences=texts, batch_size=batch_size, **params)
 
         if isinstance(results, torch.Tensor):
             results = results.cpu()
