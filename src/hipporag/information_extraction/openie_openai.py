@@ -33,7 +33,7 @@ def _extract_ner_from_response(real_response):
     if match is None:
         # If pattern doesn't match, return an empty list
         return []
-    return eval(match.group())["named_entities"]
+    return eval(match.group())["những thực thể có tên"]
 
 
 class OpenIE:
@@ -87,13 +87,13 @@ class OpenIE:
             if match is None:
                 # If pattern doesn't match, return an empty list
                 return []
-            return eval(match.group())["triples"]
+            return eval(match.group())["bộ ba"]
 
         # PREPROCESSING
         messages = self.prompt_template_manager.render(
             name='triple_extraction_vietnamese_law',
             passage=passage,
-            named_entity_json=json.dumps({"named_entities": named_entities})
+            named_entity_json=json.dumps({"những thực thể có tên": named_entities})
         )
 
         print(f"extract triplets message: {messages}")
