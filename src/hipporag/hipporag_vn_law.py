@@ -311,8 +311,30 @@ class HippoRAGVnLaw(HippoRAG):
             self.prepare_retrieval_objects()
 
         self.get_query_embeddings(queries)
-        print("Print query_to_embedding")
-        print(self.query_to_embedding)
+        
+        # Convert numpy arrays to lists for JSON serialization
+        serializable_embeddings = {
+            'triple': {
+                query: embedding.tolist() if isinstance(embedding, np.ndarray) else embedding
+                for query, embedding in self.query_to_embedding.get('triple', {}).items()
+            },
+            'passage': {
+                query: embedding.tolist() if isinstance(embedding, np.ndarray) else embedding
+                for query, embedding in self.query_to_embedding.get('passage', {}).items()
+            }
+        }
+
+        # Define directory and filename
+        output_dir = 'outputs/embeddings'
+        os.makedirs(output_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        file_path = os.path.join(output_dir, f"query_embeddings_{timestamp}.json")
+
+        # Save to JSON
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(serializable_embeddings, f, ensure_ascii=False, indent=4)
+        
+        logger.info(f"Query embeddings saved to {file_path}")
 
         retrieval_results = []
 
