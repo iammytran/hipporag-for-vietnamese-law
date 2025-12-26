@@ -29,7 +29,7 @@ class HalongEmbeddingModel(BaseEmbeddingModel):
         logger.debug(f"Initializing {self.__class__.__name__}'s embedding model with params: {self.embedding_config.model_init_params}")
 
         self.embedding_model = SentenceTransformer(**self.embedding_config.model_init_params)
-        self.embedding_dim = self.embedding_model.config.hidden_size
+        self.embedding_dim = self.embedding_model.get_sentence_embedding_dimension()
 
     def _init_embedding_config(self) -> None:
         """
