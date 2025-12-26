@@ -45,6 +45,8 @@ class OpenIE:
     def ner(self, chunk_key: str, passage: str) -> NerRawOutput:
         # PREPROCESSING
         ner_input_message = self.prompt_template_manager.render(name='ner_vietnamese_law', passage=passage)
+        print("openIE by openAI")
+        print(f"ner_input_message: {ner_input_message}")
         raw_response = ""
         metadata = {}
         try:
@@ -93,6 +95,8 @@ class OpenIE:
             passage=passage,
             named_entity_json=json.dumps({"named_entities": named_entities})
         )
+
+        print(f"extract triplets message: {messages}")
 
         raw_response = ""
         metadata = {}
