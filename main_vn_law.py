@@ -86,7 +86,7 @@ def main():
     save_dir = args.save_dir
     llm_base_url = args.llm_base_url
     llm_name = args.llm_name
-    embedding_batch_size = args.embedding_batch_size
+    embedding_batch_size = int(args.embedding_batch_size)
     if save_dir == 'outputs':
         save_dir = save_dir + '/' + dataset_name
     else:
