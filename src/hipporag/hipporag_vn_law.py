@@ -26,7 +26,7 @@ from .information_extraction.openie_vllm_offline import VLLMOfflineOpenIE
 from .information_extraction.openie_transformers_offline_vn_law import TransformersOfflineOpenIEVnLaw
 from .evaluation.retrieval_eval import RetrievalRecall
 from .evaluation.qa_eval import QAExactMatch, QAF1Score
-from .prompts.linking import get_query_instruction
+from .prompts.linking import get_query_instruction_vn
 from .prompts.prompt_template_manager import PromptTemplateManager
 from .rerank_vn_law import DSPyFilterVnLaw
 from .utils.misc_utils import *
@@ -393,3 +393,116 @@ class HippoRAGVnLaw(HippoRAG):
             return retrieval_results, overall_retrieval_result
         else:
             return retrieval_results
+    
+    def get_query_embeddings(self, queries: List[str] | List[QuerySolution]):
+        """
+        Retrieves embeddings for given queries and updates the internal query-to-embedding mapping. The method determines whether each query
+        is already present in the `self.query_to_embedding` dictionary under the keys 'triple' and 'passage'. If a query is not present in
+        either, it is encoded into embeddings using the embedding model and stored.
+
+        Args:
+            queries List[str] | List[QuerySolution]: A list of query strings or QuerySolution objects. Each query is checked for
+            its presence in the query-to-embedding mappings.
+        """
+
+        all_query_strings = []
+        for query in queries:
+            if isinstance(query, QuerySolution) and (
+                    query.question not in self.query_to_embedding['triple'] or query.question not in
+                    self.query_to_embedding['passage']):
+                all_query_strings.append(query.question)
+            elif query not in self.query_to_embedding['triple'] or query not in self.query_to_embedding['passage']:
+                all_query_strings.append(query)
+
+        if len(all_query_strings) > 0:
+            # get all query embeddings
+            logger.info(f"Encoding {len(all_query_strings)} queries for query_to_fact.")
+            query_embeddings_for_triple = self.embedding_model.batch_encode(all_query_strings,
+                                                                            instruction=get_query_instruction_vn('query_to_fact'),
+                                                                            norm=True)
+            for query, embedding in zip(all_query_strings, query_embeddings_for_triple):
+                self.query_to_embedding['triple'][query] = embedding
+
+            logger.info(f"Encoding {len(all_query_strings)} queries for query_to_passage.")
+            query_embeddings_for_passage = self.embedding_model.batch_encode(all_query_strings,
+                                                                             instruction=get_query_instruction_vn('query_to_passage'),
+                                                                             norm=True)
+            for query, embedding in zip(all_query_strings, query_embeddings_for_passage):
+                self.query_to_embedding['passage'][query] = embedding
+
+    def get_fact_scores(self, query: str) -> np.ndarray:
+        """
+        Retrieves and computes normalized similarity scores between the given query and pre-stored fact embeddings.
+
+        Parameters:
+        query : str
+            The input query text for which similarity scores with fact embeddings
+            need to be computed.
+
+        Returns:
+        numpy.ndarray
+            A normalized array of similarity scores between the query and fact
+            embeddings. The shape of the array is determined by the number of
+            facts.
+
+        Raises:
+        KeyError
+            If no embedding is found for the provided query in the stored query
+            embeddings dictionary.
+        """
+        query_embedding = self.query_to_embedding['triple'].get(query, None)
+        if query_embedding is None:
+            query_embedding = self.embedding_model.batch_encode(query,
+                                                                instruction=get_query_instruction_vn('query_to_fact'),
+                                                                norm=True)
+
+        # Check if there are any facts
+        if len(self.fact_embeddings) == 0:
+            logger.warning("No facts available for scoring. Returning empty array.")
+            return np.array([])
+            
+        try:
+            query_fact_scores = np.dot(self.fact_embeddings, query_embedding.T) # shape: (#facts, )
+            query_fact_scores = np.squeeze(query_fact_scores) if query_fact_scores.ndim == 2 else query_fact_scores
+            query_fact_scores = min_max_normalize(query_fact_scores)
+            return query_fact_scores
+        except Exception as e:
+            logger.error(f"Error computing fact scores: {str(e)}")
+            return np.array([])
+
+    def dense_passage_retrieval(self, query: str) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Conduct dense passage retrieval to find relevant documents for a query.
+
+        This function processes a given query using a pre-trained embedding model
+        to generate query embeddings. The similarity scores between the query
+        embedding and passage embeddings are computed using dot product, followed
+        by score normalization. Finally, the function ranks the documents based
+        on their similarity scores and returns the ranked document identifiers
+        and their scores.
+
+        Parameters
+        ----------
+        query : str
+            The input query for which relevant passages should be retrieved.
+
+        Returns
+        -------
+        tuple : Tuple[np.ndarray, np.ndarray]
+            A tuple containing two elements:
+            - A list of sorted document identifiers based on their relevance scores.
+            - A numpy array of the normalized similarity scores for the corresponding
+              documents.
+        """
+        query_embedding = self.query_to_embedding['passage'].get(query, None)
+        if query_embedding is None:
+            query_embedding = self.embedding_model.batch_encode(query,
+                                                                instruction=get_query_instruction_vn('query_to_passage'),
+                                                                norm=True)
+        query_doc_scores = np.dot(self.passage_embeddings, query_embedding.T)
+        query_doc_scores = np.squeeze(query_doc_scores) if query_doc_scores.ndim == 2 else query_doc_scores
+        query_doc_scores = min_max_normalize(query_doc_scores)
+
+        sorted_doc_ids = np.argsort(query_doc_scores)[::-1]
+        sorted_doc_scores = query_doc_scores[sorted_doc_ids.tolist()]
+        return sorted_doc_ids, sorted_doc_scores
