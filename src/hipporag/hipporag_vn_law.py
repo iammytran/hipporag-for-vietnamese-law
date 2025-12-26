@@ -311,7 +311,7 @@ class HippoRAGVnLaw(HippoRAG):
             self.prepare_retrieval_objects()
 
         self.get_query_embeddings(queries)
-        
+
         # Convert numpy arrays to lists for JSON serialization
         serializable_embeddings = {
             'triple': {
@@ -329,6 +329,8 @@ class HippoRAGVnLaw(HippoRAG):
         os.makedirs(output_dir, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         file_path = os.path.join(output_dir, f"query_embeddings_{timestamp}.json")
+        facts_output_dir = 'outputs/retrieved_facts'
+        facts_file_path = os.path.join(facts_output_dir, f"retrieved_facts_{timestamp}.txt")
 
         # Save to JSON
         with open(file_path, 'w', encoding='utf-8') as f:
@@ -342,6 +344,17 @@ class HippoRAGVnLaw(HippoRAG):
             rerank_start = time.time()
             query_fact_scores = self.get_fact_scores(query)
             top_k_fact_indices, top_k_facts, rerank_log = self.rerank_facts(query, query_fact_scores)
+
+            logger.info(f"Top retrieved facts for query '{query}': {top_k_facts}")
+            with open(facts_file_path, 'a', encoding='utf-8') as f:
+                f.write(f"--- Query: {query} ---\n")
+                if top_k_facts:
+                    for fact in top_k_facts:
+                        f.write(f"{fact}\n")
+                else:
+                    f.write("No facts found.\n")
+                f.write("\n")
+            
             rerank_end = time.time()
 
             self.rerank_time += rerank_end - rerank_start
