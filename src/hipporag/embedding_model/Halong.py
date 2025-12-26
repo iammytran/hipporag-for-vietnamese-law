@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 from transformers import AutoModel
+from sentence_transformers import SentenceTransformer
 
 from ..utils.config_utils import BaseConfig
 from ..utils.logging_utils import get_logger
@@ -27,7 +28,7 @@ class HalongEmbeddingModel(BaseEmbeddingModel):
         # Initializing the embedding model
         logger.debug(f"Initializing {self.__class__.__name__}'s embedding model with params: {self.embedding_config.model_init_params}")
 
-        self.embedding_model = AutoModel.from_pretrained(**self.embedding_config.model_init_params)
+        self.embedding_model = SentenceTransformer(**self.embedding_config.model_init_params)
         self.embedding_dim = self.embedding_model.config.hidden_size
 
     def _init_embedding_config(self) -> None:
