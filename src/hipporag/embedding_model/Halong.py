@@ -81,6 +81,7 @@ class HalongEmbeddingModel(BaseEmbeddingModel):
         batch_size = params.pop("batch_size", 16)
         params.pop("max_length", None)
         params.pop("num_workers", None)
+        params.pop("norm", None)
 
         logger.debug(f"Calling {self.__class__.__name__} with:\n{params}")
         results = self.embedding_model.encode(sentences=texts, batch_size=batch_size, **params)
