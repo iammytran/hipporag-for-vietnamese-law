@@ -85,13 +85,12 @@ class HalongEmbeddingModel(BaseEmbeddingModel):
 
         logger.debug(f"Calling {self.__class__.__name__} with:\n{params}")
         if len(texts) <= batch_size:
-            params["prompts"] = texts  # self._add_eos(texts=texts)
-            results = self.embedding_model.encode(**params)
+            results = self.embedding_model.encode(sentences=texts, batch_size=batch_size,**params)
         else:
             pbar = tqdm(total=len(texts), desc="Batch Encoding")
             results = []
             for i in range(0, len(texts), batch_size):
-                params["prompts"] = texts[i:i + batch_size]
+                #params["prompts"] = texts[i:i + batch_size]
                 results.append(self.embedding_model.encode(sentences=texts, batch_size=batch_size, **params))
                 pbar.update(batch_size)
             pbar.close()
