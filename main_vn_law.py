@@ -77,6 +77,8 @@ def main():
     parser.add_argument('--force_openie_from_scratch', type=str, default='false', help='If set to False, will try to first reuse openie results for the corpus if they exist.')
     parser.add_argument('--openie_mode', choices=['online', 'offline'], default='online',
                         help="OpenIE mode, offline denotes using VLLM offline batch mode for indexing, while online denotes")
+    parser.add_argument('--embedding_batch_size', choices=['online', 'offline'], default=32,
+                        help="embedding batch size")
     parser.add_argument('--save_dir', type=str, default='outputs', help='Save directory')
     args = parser.parse_args()
 
@@ -84,6 +86,7 @@ def main():
     save_dir = args.save_dir
     llm_base_url = args.llm_base_url
     llm_name = args.llm_name
+    embedding_batch_size = args.embedding_batch_size
     if save_dir == 'outputs':
         save_dir = save_dir + '/' + dataset_name
     else:
@@ -123,7 +126,7 @@ def main():
         max_qa_steps=3,
         qa_top_k=5,
         graph_type="facts_and_sim_passage_node_unidirectional",
-        embedding_batch_size=6,
+        embedding_batch_size=embedding_batch_size,
         max_new_tokens=None,
         corpus_len=len(corpus),
         openie_mode=args.openie_mode
