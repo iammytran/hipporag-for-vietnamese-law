@@ -34,7 +34,7 @@ class TransformersOfflineOpenIEVnLaw(TransformersOfflineOpenIE):
 
         logger.info(f"Bắt đầu trích xuất NER cho {len(chunk_passages)} chunk...")
         ner_input_messages = [self.prompt_template_manager.render(name='ner_vietnamese_law', passage=p) for p in chunk_passages.values()]
-        ner_output, ner_output_metadata = self.llm_model.batch_infer(ner_input_messages, json_template='ner', max_tokens=2048)
+        ner_output, ner_output_metadata = self.llm_model.batch_infer(ner_input_messages, json_template='ner', max_tokens=4096)
         logger.info("Hoàn thành NER. Bắt đầu trích xuất Triple...")
 
         triple_extract_input_messages = [self.prompt_template_manager.render(
@@ -42,7 +42,7 @@ class TransformersOfflineOpenIEVnLaw(TransformersOfflineOpenIE):
             passage=passage,
             named_entity_json=named_entities
         ) for passage, named_entities in zip(chunk_passages.values(), ner_output)]
-        triple_output, triple_output_metadata = self.llm_model.batch_infer(triple_extract_input_messages, json_template='triples', max_tokens=2048)
+        triple_output, triple_output_metadata = self.llm_model.batch_infer(triple_extract_input_messages, json_template='triples', max_tokens=4096)
         logger.info("Hoàn thành trích xuất Triple. Bắt đầu xử lý kết quả...")
 
         ner_raw_outputs = []
