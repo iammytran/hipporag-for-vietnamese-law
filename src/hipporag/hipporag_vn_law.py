@@ -116,13 +116,13 @@ class HippoRAGVnLaw(HippoRAG):
         with open(chunk_triples_filename, "w") as f:
             json.dump(chunk_triples, f, ensure_ascii=False, indent=4)
 
-        # print("\n--- Chunk Triples ---")
-        # pprint.pprint(chunk_triples)
-        # print("\n--- Entity Nodes ---")
-        # pprint.pprint(entity_nodes)
-        # print("\n--- Facts ---")
-        # pprint.pprint(facts)
-        # print("\n--- End of Data Store Prep ---\n")
+        print("\n--- Chunk Triples ---")
+        pprint.pprint(chunk_triples)
+        print("\n--- Entity Nodes ---")
+        pprint.pprint(entity_nodes)
+        print("\n--- Facts ---")
+        pprint.pprint(facts)
+        print("\n--- End of Data Store Prep ---\n")
 
         logger.info(f"Encoding Entities")
         self.entity_embedding_store.insert_strings(entity_nodes)
