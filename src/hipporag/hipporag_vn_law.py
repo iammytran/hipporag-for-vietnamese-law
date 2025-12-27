@@ -57,6 +57,13 @@ class HippoRAGVnLaw(HippoRAG):
                         embedding_base_url,
                         azure_endpoint,
                         azure_embedding_endpoint)
+        if self.global_config.openie_mode == 'online':
+            self.openie = OpenIE(llm_model=self.llm_model)
+        elif self.global_config.openie_mode == 'offline':
+            self.openie = VLLMOfflineOpenIE(self.global_config)
+        elif self.global_config.openie_mode ==  'Transformers-offline':
+            self.openie = TransformersOfflineOpenIEVnLaw(self.global_config)
+
         self.rerank_filter = DSPyFilterVnLaw(self)
 
     def index(self, docs: List[str]):
