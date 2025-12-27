@@ -37,6 +37,7 @@ from .utils.config_utils import BaseConfig
 from .HippoRAG import HippoRAG
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 class HippoRAGVnLaw(HippoRAG):
     def __init__(self,
