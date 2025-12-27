@@ -114,7 +114,7 @@ class HippoRAGVnLaw(HippoRAG):
         os.makedirs(self.working_dir, exist_ok=True)
 
         with open(chunk_triples_filename, "w") as f:
-            json.dump(chunk_triples, f, ensure_ascii=false, indent=4)
+            json.dump(chunk_triples, f, ensure_ascii=False, indent=4)
 
         # print("\n--- Chunk Triples ---")
         # pprint.pprint(chunk_triples)
