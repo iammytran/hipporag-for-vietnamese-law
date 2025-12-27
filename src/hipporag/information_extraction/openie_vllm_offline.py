@@ -34,11 +34,11 @@ class VLLMOfflineOpenIE(OpenIE):
         # Extract passages from the provided chunks
         chunk_passages = {chunk_key: chunk["content"] for chunk_key, chunk in chunks.items()}
 
-        ner_input_messages = [self.prompt_template_manager.render(name='ner', passage=p) for p in chunk_passages.values()]
+        ner_input_messages = [self.prompt_template_manager.render(name='ner_vietnamese_law', passage=p) for p in chunk_passages.values()]
         ner_output, ner_output_metadata = self.llm_model.batch_infer(ner_input_messages, json_template='ner', max_tokens=512)
 
         triple_extract_input_messages = [self.prompt_template_manager.render(
-            name='triple_extraction',
+            name='triple_extraction_vietnamese_law',
             passage=passage,
             named_entity_json=named_entities
         ) for passage, named_entities in zip(chunk_passages.values(), ner_output)]
