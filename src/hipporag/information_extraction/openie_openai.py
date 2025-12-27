@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, Any, List, TypedDict, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
+import os
 
 from ..prompts import PromptTemplateManager
 from ..utils.logging_utils import get_logger
@@ -210,5 +211,29 @@ class OpenIE:
 
         ner_results_dict = {res.chunk_id: res for res in ner_results_list}
         triple_results_dict = {res.chunk_id: res for res in triple_results_list}
+
+        # --- THÊM CODE ĐỂ DEBUG ---
+        # Lưu kết quả NER và Triple vào thư mục 'outputs' để kiểm tra
+        try:
+            output_dir = "outputs"
+            # Dòng os.makedirs sẽ không làm gì nếu thư mục đã tồn tại
+            os.makedirs(output_dir, exist_ok=True)
+
+            # Tạo đường dẫn đầy đủ đến file debug NER
+            ner_debug_path = os.path.join(output_dir, "debug_ner_results.json")
+            ner_to_save = {chunk_id: ner_output.__dict__ for chunk_id, ner_output in ner_results_dict.items()}
+            with open(ner_debug_path, "w", encoding="utf-8") as f:
+                json.dump(ner_to_save, f, ensure_ascii=False, indent=4)
+            logger.info(f"Đã lưu kết quả NER vào file: {ner_debug_path}")
+
+            # Tạo đường dẫn đầy đủ đến file debug Triple
+            triple_debug_path = os.path.join(output_dir, "debug_triple_results.json")
+            triple_to_save = {chunk_id: triple_output.__dict__ for chunk_id, triple_output in triple_results_dict.items()}
+            with open(triple_debug_path, "w", encoding="utf-8") as f:
+                json.dump(triple_to_save, f, ensure_ascii=False, indent=4)
+            logger.info(f"Đã lưu kết quả Triple vào file: {triple_debug_path}")
+        except Exception as e:
+            logger.error(f"Lỗi khi lưu file JSON để debug: {e}")
+        # --- KẾT THÚC CODE DEBUG ---
 
         return ner_results_dict, triple_results_dict
