@@ -254,15 +254,6 @@ class HippoRAG:
         chunk_ids = list(chunk_to_rows.keys())
 
         chunk_triples = [[text_processing(t) for t in triple_results_dict[chunk_id].triples] for chunk_id in chunk_ids]
-        logger.info(f"chunk_triples")
-
-        results_dir = 'outputs/results'
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        chunk_triples_filename = os.path.join(results_dir, f"chunk_triples_{timestamp}.json")
-        os.makedirs(self.working_dir, exist_ok=True)
-
-        with open(chunk_triples_filename, "w") as f:
-            json.dump(chunk_triples, f, ensure_ascii=false, indent=4)
 
         entity_nodes, chunk_triple_entities = extract_entity_nodes(chunk_triples)
         facts = flatten_facts(chunk_triples)
