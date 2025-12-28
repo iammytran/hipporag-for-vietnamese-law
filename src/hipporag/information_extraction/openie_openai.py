@@ -91,7 +91,7 @@ class OpenIE:
             if match is None:
                 # If pattern doesn't match, return an empty list
                 return []
-            return eval(match.group())["bộ ba"]
+            return eval(match.group())["triples"]
 
         # PREPROCESSING
         messages = self.prompt_template_manager.render(
