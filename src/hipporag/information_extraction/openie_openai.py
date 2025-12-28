@@ -65,6 +65,7 @@ class OpenIE:
             unique_entities = list(dict.fromkeys(extracted_entities))
             logger.debug(f"ner_raw_response: {raw_response}")
             logger.debug(f"ner_extracted_entities: {extracted_entities}")
+            logger.debug(f"ner_unique_entities: {unique_entities}")
 
         except Exception as e:
             # For any other unexpected exceptions, log them and return with the error message
@@ -99,7 +100,8 @@ class OpenIE:
             passage=passage,
             named_entity_json=json.dumps({"những thực thể có tên": named_entities})
         )
-
+        logger.debug(f"triple_extraction_prompt_passage: {passage}")
+        logger.debug(f"triple_extraction_prompt_named_entities: {named_entities}")
         logger.debug(f"triple_extraction_prompt: {messages}")
 
         raw_response = ""
