@@ -16,10 +16,10 @@ Hãy chú ý đến các yêu cầu sau:
 ner_conditioned_re_frame = """Dựa vào Đoạn văn và Danh sách thực thể có tên dưới đây, hãy trích xuất các mối quan hệ dưới dạng một danh sách các bộ ba.
 Đoạn văn:
 ```
-{passage}
+{đoạn văn}
 ```
 
-{named_entity_json}
+{json về bộ ba}
 """
 
 # Ví dụ đầu vào (one-shot)
@@ -43,3 +43,5 @@ prompt_template = [
     {"role": "assistant", "content": ner_conditioned_re_output},
     {"role": "user", "content": convert_format_to_template(original_string=ner_conditioned_re_frame, placeholder_mapping=None, static_values=None)}
 ]
+
+# print(ner_conditioned_re_input)
