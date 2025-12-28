@@ -1,6 +1,5 @@
 import json
 import os
-import logging
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 import pprint
@@ -32,12 +31,12 @@ from .rerank_vn_law import DSPyFilterVnLaw
 from .utils.misc_utils import *
 from .utils.misc_utils import NerRawOutput, TripleRawOutput
 from .utils.embed_utils import retrieve_knn
+from .utils.logging_utils import get_logger
 from .utils.typing import Triple
 from .utils.config_utils import BaseConfig
 from .HippoRAG import HippoRAG
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logger = get_logger(__name__)
 
 class HippoRAGVnLaw(HippoRAG):
     def __init__(self,
@@ -98,11 +97,8 @@ class HippoRAGVnLaw(HippoRAG):
 
         ner_results_dict, triple_results_dict = reformat_openie_results(all_openie_info)
 
-        # print("\\n--- NER Results ---")
-        # pprint.pprint(ner_results_dict)
-        # print("--- Triple Results ---")
-        # pprint.pprint(triple_results_dict)
-        # print("--- End of Results ---\\n")
+        logger.debug(f"ner_results_dict: {json.dumps(ner_results_dict, indent=4)}")
+        logger.debug(f"triple_results_dict: {json.dumps(triple_results_dict, indent=4)}")
 
         assert len(chunk_to_rows) == len(ner_results_dict) == len(triple_results_dict), f"len(chunk_to_rows): {len(chunk_to_rows)}, len(ner_results_dict): {len(ner_results_dict)}, len(triple_results_dict): {len(triple_results_dict)}"
 
@@ -113,23 +109,26 @@ class HippoRAGVnLaw(HippoRAG):
         entity_nodes, chunk_triple_entities = extract_entity_nodes(chunk_triples)
         facts = flatten_facts(chunk_triples)
 
-        logger.info(f"chunk_triples")
+        logger.debug(f"chunk_triples: {json.dumps(chunk_triples, indent=4)}")
+        logger.debug(f"entity_nodes: {json.dumps(entity_nodes, indent=4)}")
+        logger.debug(f"chunk_triple_entities: {json.dumps(chunk_triple_entities, indent=4)}")
+        logger.debug(f"facts: {json.dumps(facts, indent=4)}")
 
-        results_dir = 'outputs/results'
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        chunk_triples_filename = os.path.join(results_dir, f"chunk_triples_{timestamp}.json")
-        os.makedirs(self.working_dir, exist_ok=True)
+        # results_dir = 'outputs/results'
+        # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # chunk_triples_filename = os.path.join(results_dir, f"chunk_triples_{timestamp}.json")
+        # os.makedirs(self.working_dir, exist_ok=True)
 
-        with open(chunk_triples_filename, "w") as f:
-            json.dump(chunk_triples, f, ensure_ascii=False, indent=4)
+        # with open(chunk_triples_filename, "w") as f:
+        #     json.dump(chunk_triples, f, ensure_ascii=False, indent=4)
 
-        print("\n--- Chunk Triples ---")
-        pprint.pprint(chunk_triples)
-        print("\n--- Entity Nodes ---")
-        pprint.pprint(entity_nodes)
-        print("\n--- Facts ---")
-        pprint.pprint(facts)
-        print("\n--- End of Data Store Prep ---\n")
+        # print("\n--- Chunk Triples ---")
+        # pprint.pprint(chunk_triples)
+        # print("\n--- Entity Nodes ---")
+        # pprint.pprint(entity_nodes)
+        # print("\n--- Facts ---")
+        # pprint.pprint(facts)
+        # print("\n--- End of Data Store Prep ---\n")
 
         logger.info(f"Encoding Entities")
         self.entity_embedding_store.insert_strings(entity_nodes)

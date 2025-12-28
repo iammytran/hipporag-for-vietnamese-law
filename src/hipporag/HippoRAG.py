@@ -29,13 +29,13 @@ from .prompts.linking import get_query_instruction
 from .prompts.prompt_template_manager import PromptTemplateManager
 from .rerank import DSPyFilter
 from .utils.misc_utils import *
+from .utils.logging_utils import get_logger
 from .utils.misc_utils import NerRawOutput, TripleRawOutput
 from .utils.embed_utils import retrieve_knn
 from .utils.typing import Triple
 from .utils.config_utils import BaseConfig
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class HippoRAG:
 
