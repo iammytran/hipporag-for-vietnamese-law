@@ -84,6 +84,7 @@ class HippoRAGVnLaw(HippoRAG):
 
         self.chunk_embedding_store.insert_strings(docs)
         chunk_to_rows = self.chunk_embedding_store.get_all_id_to_rows()
+        logger.debug(f"chunk_to_rows: {json.dumps(chunk_to_rows, indent=4)}")
 
         all_openie_info, chunk_keys_to_process = self.load_existing_openie(chunk_to_rows.keys())
         new_openie_rows = {k : chunk_to_rows[k] for k in chunk_keys_to_process}
@@ -96,8 +97,12 @@ class HippoRAGVnLaw(HippoRAG):
             self.save_openie_results(all_openie_info)
 
         ner_results_dict, triple_results_dict = reformat_openie_results(all_openie_info)
+        
+        # logging
+        serializable_ner_results = {k: v.__dict__ for k, v in ner_results_dict.items()}
+        serializable_triple_results = {k: v.__dict__ for k, v in triple_results_dict.items()}
 
-        logger.debug(f"ner_results_dict: {json.dumps(ner_results_dict, indent=4)}")
+        logger.debug(f"ner_results_dict: {json.dumps(serialized_ner_results, indent=4)}")
         logger.debug(f"triple_results_dict: {json.dumps(triple_results_dict, indent=4)}")
 
         assert len(chunk_to_rows) == len(ner_results_dict) == len(triple_results_dict), f"len(chunk_to_rows): {len(chunk_to_rows)}, len(ner_results_dict): {len(ner_results_dict)}, len(triple_results_dict): {len(triple_results_dict)}"
@@ -113,22 +118,6 @@ class HippoRAGVnLaw(HippoRAG):
         logger.debug(f"entity_nodes: {json.dumps(entity_nodes, indent=4)}")
         logger.debug(f"chunk_triple_entities: {json.dumps(chunk_triple_entities, indent=4)}")
         logger.debug(f"facts: {json.dumps(facts, indent=4)}")
-
-        # results_dir = 'outputs/results'
-        # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        # chunk_triples_filename = os.path.join(results_dir, f"chunk_triples_{timestamp}.json")
-        # os.makedirs(self.working_dir, exist_ok=True)
-
-        # with open(chunk_triples_filename, "w") as f:
-        #     json.dump(chunk_triples, f, ensure_ascii=False, indent=4)
-
-        # print("\n--- Chunk Triples ---")
-        # pprint.pprint(chunk_triples)
-        # print("\n--- Entity Nodes ---")
-        # pprint.pprint(entity_nodes)
-        # print("\n--- Facts ---")
-        # pprint.pprint(facts)
-        # print("\n--- End of Data Store Prep ---\n")
 
         logger.info(f"Encoding Entities")
         self.entity_embedding_store.insert_strings(entity_nodes)

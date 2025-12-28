@@ -755,6 +755,7 @@ class HippoRAG:
             current_graph_nodes = set()
 
         logger.info(f"Adding OpenIE triples to graph.")
+        logger.info(f"current_graph_nodes: {current_graph_nodes}")
 
         for chunk_key, triples in tqdm(zip(chunk_ids, chunk_triples)):
             entities_in_chunk = set()
