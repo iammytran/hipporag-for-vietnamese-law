@@ -4,7 +4,7 @@ from ...utils.llm_utils import convert_format_to_template
 
 # Hướng dẫn hệ thống
 ner_conditioned_re_system = """Nhiệm vụ của bạn là xây dựng một đồ thị RDF (Resource Description Framework) từ đoạn văn bản và danh sách thực thể có tên được cung cấp.
-Trả lời bằng một danh sách JSON chứa các bộ ba, mỗi bộ ba đại diện cho một mối quan hệ trong đồ thị RDF.
+Trả lời bằng một danh sách JSON chứa các bộ ba (triples), mỗi bộ ba đại diện cho một mối quan hệ trong đồ thị RDF.
 
 Hãy chú ý đến các yêu cầu sau:
 - Mỗi bộ ba nên chứa ít nhất một, và tốt nhất là hai, thực thể có tên trong danh sách được cung cấp.
@@ -26,7 +26,7 @@ ner_conditioned_re_frame = """Dựa vào Đoạn văn và Danh sách thực th�
 ner_conditioned_re_input = ner_conditioned_re_frame.format(passage=one_shot_ner_paragraph, named_entity_json=one_shot_ner_output)
 
 # Ví dụ đầu ra tương ứng với ví dụ đầu vào
-ner_conditioned_re_output = """{"bộ ba": [
+ner_conditioned_re_output = """{"triples": [
             ["Bộ luật Dân sự", "có số hiệu", "91/2015/QH13"],
             ["Bộ luật Dân sự", "được thông qua bởi", "Quốc hội"],
             ["Quốc hội", "thuộc", "Cộng hòa xã hội chủ nghĩa Việt Nam"],
