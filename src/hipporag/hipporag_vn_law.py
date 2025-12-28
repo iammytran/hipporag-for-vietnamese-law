@@ -102,8 +102,8 @@ class HippoRAGVnLaw(HippoRAG):
         serializable_ner_results = {k: v.__dict__ for k, v in ner_results_dict.items()}
         serializable_triple_results = {k: v.__dict__ for k, v in triple_results_dict.items()}
 
-        logger.debug(f"ner_results_dict: {json.dumps(serialized_ner_results, indent=4)}")
-        logger.debug(f"triple_results_dict: {json.dumps(triple_results_dict, indent=4)}")
+        logger.debug(f"ner_results_dict: {json.dumps(serializable_ner_results, indent=4)}")
+        logger.debug(f"triple_results_dict: {json.dumps(serializable_triple_results, indent=4)}")
 
         assert len(chunk_to_rows) == len(ner_results_dict) == len(triple_results_dict), f"len(chunk_to_rows): {len(chunk_to_rows)}, len(ner_results_dict): {len(ner_results_dict)}, len(triple_results_dict): {len(triple_results_dict)}"
 
