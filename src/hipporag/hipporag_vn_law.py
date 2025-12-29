@@ -444,14 +444,14 @@ class HippoRAGVnLaw(HippoRAG):
         """
         Another way to get query_embeddings. Instead of using embedding model to extract triples and embed at the same time, we separate that into 2 steps. 
         """
-        all_query_strings = []
-        for query in queries:
-            if isinstance(query, QuerySolution) and (
-                    query.question not in self.query_to_embedding['triple'] or query.question not in
-                    self.query_to_embedding['passage']):
-                all_query_strings.append(query.question)
-            elif query not in self.query_to_embedding['triple'] or query not in self.query_to_embedding['passage']:
-                all_query_strings.append(query)
+        # all_query_strings = []
+        # for query in queries:
+        #     if isinstance(query, QuerySolution) and (
+        #             query.question not in self.query_to_embedding['triple'] or query.question not in
+        #             self.query_to_embedding['passage']):
+        #         all_query_strings.append(query.question)
+        #     elif query not in self.query_to_embedding['triple'] or query not in self.query_to_embedding['passage']:
+        #         all_query_strings.append(query)
 
         if len(all_query_strings) > 0:
             # construct input for batch_openie
