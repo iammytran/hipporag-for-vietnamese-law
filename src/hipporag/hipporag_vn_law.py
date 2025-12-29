@@ -367,9 +367,10 @@ class HippoRAGVnLaw(HippoRAG):
             self.rerank_time += rerank_end - rerank_start
 
             if len(top_k_facts) == 0:
-                logger.info('No facts found after reranking, return DPR results')
+                logger.info(f'For {query}, no facts found after reranking, return DPR results')
                 sorted_doc_ids, sorted_doc_scores = self.dense_passage_retrieval(query)
             else:
+                logger.info(f'For {query}, do graph search')
                 sorted_doc_ids, sorted_doc_scores = self.graph_search_with_fact_entities(query=query,
                                                                                          link_top_k=self.global_config.linking_top_k,
                                                                                          query_fact_scores=query_fact_scores,

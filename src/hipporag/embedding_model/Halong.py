@@ -13,7 +13,6 @@ from .base import BaseEmbeddingModel, EmbeddingConfig, make_cache_embed
 
 logger = get_logger(__name__)
 
-
 class HalongEmbeddingModel(BaseEmbeddingModel):
 
     def __init__(self, global_config: Optional[BaseConfig] = None, embedding_model_name: Optional[str] = None) -> None:
@@ -77,6 +76,9 @@ class HalongEmbeddingModel(BaseEmbeddingModel):
         if instruction:
             texts = [f"Instruct: {instruction}\nQuery: {text}" for text in texts]
             # del params["instruction"]
+
+        logger.debug(f"Batch_encode_instruction: {texts}")
+        
 
         batch_size = params.pop("batch_size", 16)
         params.pop("max_length", None)

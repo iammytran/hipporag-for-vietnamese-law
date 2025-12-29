@@ -767,8 +767,8 @@ class HippoRAG:
                     node_key = compute_mdhash_id(content=triple[0], prefix=("entity-"))
                     node_2_key = compute_mdhash_id(content=triple[2], prefix=("entity-"))
 
-                    logger.debug(f"add_fact_edges_node_key: {node_key}")
-                    logger.debug(f"add_fact_edges_node_2_key: {node_2_key}")
+                    # logger.debug(f"add_fact_edges_node_key: {node_key}")
+                    # logger.debug(f"add_fact_edges_node_2_key: {node_2_key}")
 
                     self.node_to_node_stats[(node_key, node_2_key)] = self.node_to_node_stats.get(
                         (node_key, node_2_key), 0.0) + 1
@@ -1459,12 +1459,12 @@ class HippoRAG:
             fact_score = query_fact_scores[
                 top_k_fact_indices[rank]] if query_fact_scores.ndim > 0 else query_fact_scores
 
-            for phrase in [subject_phrase, object_phrase]:
+            for phrase in [subject_phrase, object_phrase]: # phrase: ("f[0], f[1]" trong fact)
                 phrase_key = compute_mdhash_id(
                     content=phrase,
                     prefix="entity-"
                 )
-                phrase_id = self.node_name_to_vertex_idx.get(phrase_key, None)
+                phrase_id = self.node_name_to_vertex_idx.get(phrase_key, None) #phase_key: 1 hash_id
 
                 if phrase_id is not None:
                     weighted_fact_score = fact_score
@@ -1472,7 +1472,7 @@ class HippoRAG:
                     if len(self.ent_node_to_chunk_ids.get(phrase_key, set())) > 0:
                         weighted_fact_score /= len(self.ent_node_to_chunk_ids[phrase_key])
 
-                    phrase_weights[phrase_id] += weighted_fact_score
+                    phrase_weights[phrase_id] += weighted_fact_score # dict: (phrase_id: weights)
                     number_of_occurs[phrase_id] += 1
 
                 phrases_and_ids.add((phrase, phrase_id))
@@ -1503,12 +1503,12 @@ class HippoRAG:
             passage_node_key = self.passage_node_keys[dpr_sorted_doc_id]
             passage_dpr_score = normalized_dpr_sorted_scores[i]
             passage_node_id = self.node_name_to_vertex_idx[passage_node_key]
-            passage_weights[passage_node_id] = passage_dpr_score * passage_node_weight
+            passage_weights[passage_node_id] = passage_dpr_score * passage_node_weight # dict(chunk_id: weights)
             passage_node_text = self.chunk_embedding_store.get_row(passage_node_key)["content"]
-            linking_score_map[passage_node_text] = passage_dpr_score * passage_node_weight
+            linking_score_map[passage_node_text] = passage_dpr_score * passage_node_weight # dict(chunk_text: weights)
 
         #Combining phrase and passage scores into one array for PPR
-        node_weights = phrase_weights + passage_weights
+        node_weights = phrase_weights + passage_weights # node_weights: dict (node_id: weight); node có thể là phrase hay passage
 
         #Recording top 30 facts in linking_score_map
         if len(linking_score_map) > 30:
