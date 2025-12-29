@@ -1045,6 +1045,7 @@ class HippoRAG:
 
         node_to_rows = entity_to_row
         node_to_rows.update(passage_to_row)
+        logger.debug(f"node_to_rows: {node_to_rows}")
 
         new_nodes = {}
         for node_id, node in node_to_rows.items():
@@ -1054,6 +1055,8 @@ class HippoRAG:
                     if k not in new_nodes:
                         new_nodes[k] = []
                     new_nodes[k].append(v)
+        
+        logger.debug(f"Adding nodes to graph: {new_nodes}")
 
         if len(new_nodes) > 0:
             self.graph.add_vertices(n=len(next(iter(new_nodes.values()))), attributes=new_nodes)
