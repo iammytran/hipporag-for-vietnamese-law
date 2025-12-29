@@ -107,7 +107,7 @@ def flatten_facts(chunk_triples: List[Triple]) -> List[Triple]:
     return graph_triples
 
 def stringify_fact(fact: List[str]):
-    return f"Chủ thể '{fact[0]}' có quan hệ '{fact[1]}' với đối tượng '{fact[2]}'."
+    return ", ".join(fact)
 
 def min_max_normalize(x):
     min_val = np.min(x)
