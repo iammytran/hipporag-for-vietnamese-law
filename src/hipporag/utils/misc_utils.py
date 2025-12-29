@@ -106,8 +106,8 @@ def flatten_facts(chunk_triples: List[Triple]) -> List[Triple]:
     graph_triples = list(set(graph_triples))
     return graph_triples
 
-def stringify_fact(fact: List[str]):
-    return ", ".join(fact)
+def stringify_fact(fact):
+    return str(fact)
 
 def min_max_normalize(x):
     min_val = np.min(x)
