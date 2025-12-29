@@ -767,6 +767,9 @@ class HippoRAG:
                     node_key = compute_mdhash_id(content=triple[0], prefix=("entity-"))
                     node_2_key = compute_mdhash_id(content=triple[2], prefix=("entity-"))
 
+                    logger.debug(f"add_fact_edges_node_key: {node_key}")
+                    logger.debug(f"add_fact_edges_node_2_key: {node_2_key}")
+
                     self.node_to_node_stats[(node_key, node_2_key)] = self.node_to_node_stats.get(
                         (node_key, node_2_key), 0.0) + 1
                     self.node_to_node_stats[(node_2_key, node_key)] = self.node_to_node_stats.get(
