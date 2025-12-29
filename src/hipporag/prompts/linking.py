@@ -16,6 +16,7 @@ def get_query_instruction_vn(linking_method):
         'query_to_fact': 'Cho một câu hỏi, truy xuất các bộ ba dữ kiện có liên quan phù hợp với câu hỏi này.',
         'query_to_sentence': 'Cho một câu hỏi, truy xuất các câu có liên quan trả lời câu hỏi một cách tốt nhất.',
         'query_to_passage': 'Cho một câu hỏi, truy xuất các tài liệu có liên quan trả lời câu hỏi một cách tốt nhất.',
+        "fact_query_to_fact": "Cho một bộ ba đại diện cho một mối quan hệ, truy xuất các bộ ba có liên quan phù hợp nhất với bộ ba này."
     }
     default_instruction = 'Cho một câu hỏi, truy xuất các tài liệu có liên quan trả lời câu hỏi một cách tốt nhất.'
     return instructions.get(linking_method, default_instruction)

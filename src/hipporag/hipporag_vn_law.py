@@ -317,7 +317,7 @@ class HippoRAGVnLaw(HippoRAG):
             print("prepare_retrieval_objects dc activated!")
             self.prepare_retrieval_objects()
 
-        self.get_query_embeddings(queries)
+        #self.get_query_embeddings(queries)
         # add for debug
         self.get_query_embeddings_through_retrieved_facts(queries)
 
@@ -444,55 +444,107 @@ class HippoRAGVnLaw(HippoRAG):
         """
         Another way to get query_embeddings. Instead of using embedding model to extract triples and embed at the same time, we separate that into 2 steps. 
         """
-        # all_query_strings = []
-        # for query in queries:
-        #     if isinstance(query, QuerySolution) and (
-        #             query.question not in self.query_to_embedding['triple'] or query.question not in
-        #             self.query_to_embedding['passage']):
-        #         all_query_strings.append(query.question)
-        #     elif query not in self.query_to_embedding['triple'] or query not in self.query_to_embedding['passage']:
-        #         all_query_strings.append(query)
-
-        # if len(all_query_strings) > 0:
-        #     # construct input for batch_openie
-        #     queries_for_openie = {}
-        #     for query in queries:
-        #         query_hash_id = compute_mdhash_id(query, prefix=("query-"))
-        #         queries_for_openie[query_hash_id] = {"hash_id": query, "content": query}
-
-        #     queries_ner_results_dict, queries_triple_results_dict = self.openie.batch_openie(queries_for_openie)
-        #     logger.debug(f"queries_ner_results_dict: {json_dumps_readable(queries_ner_results_dict)}")
-        #     logger.debug(f"queries_triple_results_dict: {json_dumps_readable(queries_triple_results_dict)}")
-            
-        #     query_ids = list(queries_for_openie.keys())
-        #     chunk_triples = [[text_processing(t) for t in queries_triple_results_dict[query_id].triples] for query_id in query_ids]
-
-        #     # entity_nodes, chunk_triple_entities = extract_entity_nodes(chunk_triples)
-        #     # facts = flatten_facts(chunk_triples)
-        #     query_to_triples = dict()
-        #     for query, extracted_triples in zip(queries, chunk_triples):
-        #         query_to_triples[query] = extracted_triples
-            
-        #     logger.debug(f"result extract triples from queries: {json_dumps_readable(query_to_triples)}")
-        queries_for_openie = {}
+        all_query_strings = []
         for query in queries:
-            query_hash_id = compute_mdhash_id(query, prefix=("query-"))
-            queries_for_openie[query_hash_id] = {"hash_id": query, "content": query}
+            if isinstance(query, QuerySolution) and (
+                    query.question not in self.query_to_embedding['triple'] or query.question not in
+                    self.query_to_embedding['passage']):
+                all_query_strings.append(query.question)
+            elif query not in self.query_to_embedding['triple'] or query not in self.query_to_embedding['passage']:
+                all_query_strings.append(query)
 
-        queries_ner_results_dict, queries_triple_results_dict = self.openie.batch_openie(queries_for_openie)
-        logger.debug(f"queries_ner_results_dict: {json_dumps_readable(queries_ner_results_dict)}")
-        logger.debug(f"queries_triple_results_dict: {json_dumps_readable(queries_triple_results_dict)}")
-        
-        query_ids = list(queries_for_openie.keys())
-        chunk_triples = [[text_processing(t) for t in queries_triple_results_dict[query_id].triples] for query_id in query_ids]
+        if len(all_query_strings) > 0:
+            # construct input for batch_openie
+            logger.info(f"Encoding query using new get_query_embedding function!")
+            queries_for_openie = {}
+            for query in all_query_strings:
+                query_hash_id = compute_mdhash_id(query, prefix=("query-"))
+                queries_for_openie[query_hash_id] = {"hash_id": query, "content": query}
 
-        # entity_nodes, chunk_triple_entities = extract_entity_nodes(chunk_triples)
-        # facts = flatten_facts(chunk_triples)
-        query_to_triples = dict()
-        for query, extracted_triples in zip(queries, chunk_triples):
-            query_to_triples[query] = extracted_triples
+            queries_ner_results_dict, queries_triple_results_dict = self.openie.batch_openie(queries_for_openie)
+            logger.debug(f"queries_ner_results_dict: {json_dumps_readable(queries_ner_results_dict)}")
+            logger.debug(f"queries_triple_results_dict: {json_dumps_readable(queries_triple_results_dict)}")
+            
+            query_ids = list(queries_for_openie.keys())
+            chunk_triples = [[text_processing(t) for t in queries_triple_results_dict[query_id].triples] for query_id in query_ids]
+
+            # entity_nodes, chunk_triple_entities = extract_entity_nodes(chunk_triples)
+            # facts = flatten_facts(chunk_triples)
+            query_to_triples = dict()
+            for query, extracted_triples in zip(all_query_strings, chunk_triples):
+                query_to_triples[query] = extracted_triples
+            
+            logger.debug(f"result extract triples from queries: {json_dumps_readable(query_to_triples)}")
+
+            # Encoding query_to_fact
+            logger.info(f"Encoding {len(all_query_strings)} queries for query_to_fact.")
+            query_embeddings_for_triple = ""
+            for query, triples_in_query in query_to_triples.items():
+                logger.info(f"query: {query}")
+                logger.info(f"triples_in_query: {triples_in_query}")
+                if len(triples_in_query) == 0:
+                    query_embeddings_for_triple = self.embedding_model.batch_encode(query,
+                                                                                instruction=get_query_instruction_vn('query_to_fact'),
+                                                                                norm=True)
+                else:
+                    query_embeddings_for_triple = self.embedding_model.batch_encode(stringify_fact(triples_in_query),
+                                                                                instruction=get_query_instruction_vn('fact_query_to_fact'),
+                                                                                norm=True)
+            for query, embedding in zip(all_query_strings, query_embeddings_for_triple):
+                self.query_to_embedding['triple'][query] = embedding
+
+            # Encoding query_to_passage
+            logger.info(f"Encoding {len(all_query_strings)} queries for query_to_passage.")
+            query_embeddings_for_passage = self.embedding_model.batch_encode(all_query_strings,
+                                                                                instruction=get_query_instruction_vn('query_to_passage'),
+                                                                                norm=True)
+            for query, embedding in zip(all_query_strings, query_embeddings_for_passage):
+                self.query_to_embedding['passage'][query] = embedding
+
+        # logger.info(f"Encoding query using new get_query_embedding function!")
+        # queries_for_openie = {}
+        # for query in queries:
+        #     query_hash_id = compute_mdhash_id(query, prefix=("query-"))
+        #     queries_for_openie[query_hash_id] = {"hash_id": query, "content": query}
+
+        # queries_ner_results_dict, queries_triple_results_dict = self.openie.batch_openie(queries_for_openie)
+        # logger.debug(f"queries_ner_results_dict: {json_dumps_readable(queries_ner_results_dict)}")
+        # logger.debug(f"queries_triple_results_dict: {json_dumps_readable(queries_triple_results_dict)}")
         
-        logger.debug(f"result extract triples from queries: {json_dumps_readable(query_to_triples)}")
+        # query_ids = list(queries_for_openie.keys())
+        # chunk_triples = [[text_processing(t) for t in queries_triple_results_dict[query_id].triples] for query_id in query_ids]
+
+        # # entity_nodes, chunk_triple_entities = extract_entity_nodes(chunk_triples)
+        # # facts = flatten_facts(chunk_triples)
+        # query_to_triples = dict()
+        # for query, extracted_triples in zip(queries, chunk_triples):
+        #     query_to_triples[query] = extracted_triples
+        
+        # logger.debug(f"result extract triples from queries: {json_dumps_readable(query_to_triples)}")
+
+        # # Encoding query_to_fact
+        # logger.info(f"Encoding {len(queries)} queries for query_to_fact.")
+        # for query, triples_in_query in query_to_triples.items():
+        #     logger.info(f"query: {query}")
+        #     logger.info(f"triples_in_query: {triples_in_query}")
+        #     if len(triples_in_query) == 0:
+        #         query_embeddings_for_triple = self.embedding_model.batch_encode(query,
+        #                                                                     instruction=get_query_instruction_vn('query_to_fact'),
+        #                                                                     norm=True)
+        #     else:
+        #         query_embeddings_for_triple = self.embedding_model.batch_encode(stringify_fact(triples_in_query),
+        #                                                                     instruction=get_query_instruction_vn('fact_query_to_fact'),
+        #                                                                     norm=True)
+        # for query, embedding in zip(queries, query_embeddings_for_triple):
+        #     self.query_to_embedding['triple'][query] = embedding
+
+        # # Encoding query_to_passage
+        # logger.info(f"Encoding {len(all_query_strings)} queries for query_to_passage.")
+        # query_embeddings_for_passage = self.embedding_model.batch_encode(all_query_strings,
+        #                                                                     instruction=get_query_instruction_vn('query_to_passage'),
+        #                                                                     norm=True)
+        # for query, embedding in zip(all_query_strings, query_embeddings_for_passage):
+        #     self.query_to_embedding['passage'][query] = embedding
 
     def get_fact_scores(self, query: str) -> np.ndarray:
         """
