@@ -856,6 +856,8 @@ class HippoRAG:
                                                     k=self.global_config.synonymy_edge_topk,
                                                     query_batch_size=self.global_config.synonymy_edge_query_batch_size,
                                                     key_batch_size=self.global_config.synonymy_edge_key_batch_size)
+        
+        logger.debug(f"query_node_key2knn_node_keys: {query_node_key2knn_node_keys}")
 
         num_synonym_triple = 0
         synonym_candidates = []  # [(node key, [(synonym node key, corresponding score), ...]), ...]
@@ -865,7 +867,7 @@ class HippoRAG:
 
             entity = self.entity_id_to_row[node_key]["content"]
 
-            if len(re.sub('[^A-Za-z0-9]', '', entity)) > 2:
+            if len(text_processing(entity)) > 2:
                 nns = query_node_key2knn_node_keys[node_key]
 
                 num_nns = 0
