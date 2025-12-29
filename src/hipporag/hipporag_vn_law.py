@@ -453,27 +453,46 @@ class HippoRAGVnLaw(HippoRAG):
         #     elif query not in self.query_to_embedding['triple'] or query not in self.query_to_embedding['passage']:
         #         all_query_strings.append(query)
 
-        if len(all_query_strings) > 0:
-            # construct input for batch_openie
-            queries_for_openie = {}
-            for query in queries:
-                query_hash_id = compute_mdhash_id(query, prefix=("query-"))
-                queries_for_openie[query_hash_id] = {"hash_id": query, "content": query}
+        # if len(all_query_strings) > 0:
+        #     # construct input for batch_openie
+        #     queries_for_openie = {}
+        #     for query in queries:
+        #         query_hash_id = compute_mdhash_id(query, prefix=("query-"))
+        #         queries_for_openie[query_hash_id] = {"hash_id": query, "content": query}
 
-            queries_ner_results_dict, queries_triple_results_dict = self.openie.batch_openie(queries_for_openie)
-            logger.debug(f"queries_ner_results_dict: {json_dumps_readable(queries_ner_results_dict)}")
-            logger.debug(f"queries_triple_results_dict: {json_dumps_readable(queries_triple_results_dict)}")
+        #     queries_ner_results_dict, queries_triple_results_dict = self.openie.batch_openie(queries_for_openie)
+        #     logger.debug(f"queries_ner_results_dict: {json_dumps_readable(queries_ner_results_dict)}")
+        #     logger.debug(f"queries_triple_results_dict: {json_dumps_readable(queries_triple_results_dict)}")
             
-            query_ids = list(queries_for_openie.keys())
-            chunk_triples = [[text_processing(t) for t in queries_triple_results_dict[query_id].triples] for query_id in query_ids]
+        #     query_ids = list(queries_for_openie.keys())
+        #     chunk_triples = [[text_processing(t) for t in queries_triple_results_dict[query_id].triples] for query_id in query_ids]
 
-            # entity_nodes, chunk_triple_entities = extract_entity_nodes(chunk_triples)
-            # facts = flatten_facts(chunk_triples)
-            query_to_triples = dict()
-            for query, extracted_triples in zip(queries, chunk_triples):
-                query_to_triples[query] = extracted_triples
+        #     # entity_nodes, chunk_triple_entities = extract_entity_nodes(chunk_triples)
+        #     # facts = flatten_facts(chunk_triples)
+        #     query_to_triples = dict()
+        #     for query, extracted_triples in zip(queries, chunk_triples):
+        #         query_to_triples[query] = extracted_triples
             
-            logger.debug(f"result extract triples from queries: {json_dumps_readable(query_to_triples)}")
+        #     logger.debug(f"result extract triples from queries: {json_dumps_readable(query_to_triples)}")
+        queries_for_openie = {}
+        for query in queries:
+            query_hash_id = compute_mdhash_id(query, prefix=("query-"))
+            queries_for_openie[query_hash_id] = {"hash_id": query, "content": query}
+
+        queries_ner_results_dict, queries_triple_results_dict = self.openie.batch_openie(queries_for_openie)
+        logger.debug(f"queries_ner_results_dict: {json_dumps_readable(queries_ner_results_dict)}")
+        logger.debug(f"queries_triple_results_dict: {json_dumps_readable(queries_triple_results_dict)}")
+        
+        query_ids = list(queries_for_openie.keys())
+        chunk_triples = [[text_processing(t) for t in queries_triple_results_dict[query_id].triples] for query_id in query_ids]
+
+        # entity_nodes, chunk_triple_entities = extract_entity_nodes(chunk_triples)
+        # facts = flatten_facts(chunk_triples)
+        query_to_triples = dict()
+        for query, extracted_triples in zip(queries, chunk_triples):
+            query_to_triples[query] = extracted_triples
+        
+        logger.debug(f"result extract triples from queries: {json_dumps_readable(query_to_triples)}")
 
     def get_fact_scores(self, query: str) -> np.ndarray:
         """
