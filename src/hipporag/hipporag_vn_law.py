@@ -487,7 +487,7 @@ class HippoRAGVnLaw(HippoRAG):
                                                                                 instruction=get_query_instruction_vn('query_to_fact'),
                                                                                 norm=True)
                 else:
-                    query_embeddings_for_triple = self.embedding_model.batch_encode(stringify_fact(triples_in_query),
+                    query_embeddings_for_triple = self.embedding_model.batch_encode(stringify_fact(flatten_facts(triples_in_query)),
                                                                                 instruction=get_query_instruction_vn('fact_query_to_fact'),
                                                                                 norm=True)
             for query, embedding in zip(all_query_strings, query_embeddings_for_triple):
