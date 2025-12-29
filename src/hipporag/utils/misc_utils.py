@@ -5,6 +5,7 @@ from typing import Dict, Any, List, Tuple, Literal, Union, Optional
 import numpy as np
 import re
 import logging
+import json
 
 from .typing import Triple
 from .llm_utils import filter_invalid_triples
@@ -160,3 +161,25 @@ def string_to_bool(v):
         raise ArgumentTypeError(
             f"Truthy value expected: got {v} but expected one of yes/no, true/false, t/f, y/n, 1/0 (case insensitive)."
         )
+
+def json_dumps_readable(data, ensure_ascii:bool = False):
+    if not is_json_serializable(data):
+        serialized_data = {k: v.__dict__ for k, v in data.items()}
+        return json.dumps(serialized_data, ensure_ascii=ensure_ascii, indent=4)
+    return json.dumps(data, ensure_ascii=ensure_ascii, indent=4)
+
+def is_json_serializable(data):
+    """
+    Kiểm tra xem một đối tượng có thể được tuần tự hóa JSON hay không.
+
+    Args:
+        data: Đối tượng cần kiểm tra (list, dict, etc.).
+
+    Returns:
+        bool: True nếu có thể tuần tự hóa, False nếu không.
+    """
+    try:
+        json.dumps(data)
+        return True
+    except TypeError:
+        return False

@@ -318,6 +318,8 @@ class HippoRAGVnLaw(HippoRAG):
             self.prepare_retrieval_objects()
 
         self.get_query_embeddings(queries)
+        # add for debug
+        self.get_query_embeddings_through_retrieved_facts(queries)
 
         # Convert numpy arrays to lists for JSON serialization
         serializable_embeddings = {
@@ -438,47 +440,20 @@ class HippoRAGVnLaw(HippoRAG):
             for query, embedding in zip(all_query_strings, query_embeddings_for_passage):
                 self.query_to_embedding['passage'][query] = embedding
 
-    # def get_query_embeddings_through_retrieved_facts(self, queries: List[str] | List[QuerySolution]):
-    #     """
-    #     Retrieves embeddings for given queries and updates the internal query-to-embedding mapping. The method determines whether each query
-    #     is already present in the `self.query_to_embedding` dictionary under the keys 'triple' and 'passage'. If a query is not present in
-    #     either, it is encoded into embeddings using the embedding model and stored.
+    def get_query_embeddings_through_retrieved_facts(self, queries: List[str] | List[QuerySolution]):
+        """
+        Another way to get query_embeddings. Instead of using embedding model to extract triples and embed at the same time, we separate that into 2 steps. 
+        """
+        # construct input for batch_openie
+        queries_for_openie = {}
+        for query in queries:
+            query_hash_id = compute_mdhash_id(query, prefix=("query-"))
+            queries_for_openie[query_hash_id] = {"hash_id": query_hash_id, "content": query}
 
-    #     Args:
-    #         queries List[str] | List[QuerySolution]: A list of query strings or QuerySolution objects. Each query is checked for
-    #         its presence in the query-to-embedding mappings.
-    #     """
-    #     chunks = self.chunk_embedding_store.get_missing_string_hash_ids(docs)
-
-    #     new_ner_results_dict, new_triple_results_dict = self.openie.batch_openie(new_openie_rows)
-
-    #     all_openie_info, chunk_keys_to_process = self.load_existing_openie(chunks.keys())
-    #     new_openie_rows = {k : chunks[k] for k in chunk_keys_to_process}
-    #     all_query_strings = []
-    #     for query in queries:
-    #         if isinstance(query, QuerySolution) and (
-    #                 query.question not in self.query_to_embedding['triple'] or query.question not in
-    #                 self.query_to_embedding['passage']):
-    #             all_query_strings.append(query.question)
-    #         elif query not in self.query_to_embedding['triple'] or query not in self.query_to_embedding['passage']:
-    #             all_query_strings.append(query)
-
-    #     if len(all_query_strings) > 0:
-    #         # get all query embeddings
-    #         logger.info(f"Encoding {len(all_query_strings)} queries for query_to_fact.")
-    #         query_embeddings_for_triple = self.embedding_model.batch_encode(all_query_strings,
-    #                                                                         instruction=get_query_instruction_vn('query_to_fact'),
-    #                                                                         norm=True)
-    #         for query, embedding in zip(all_query_strings, query_embeddings_for_triple):
-    #             self.query_to_embedding['triple'][query] = embedding
-
-    #         logger.info(f"Encoding {len(all_query_strings)} queries for query_to_passage.")
-    #         query_embeddings_for_passage = self.embedding_model.batch_encode(all_query_strings,
-    #                                                                          instruction=get_query_instruction_vn('query_to_passage'),
-    #                                                                          norm=True)
-    #         for query, embedding in zip(all_query_strings, query_embeddings_for_passage):
-    #             self.query_to_embedding['passage'][query] = embedding
-
+        queries_ner_results_dict, queries_triple_results_dict = self.openie.batch_openie(queries_for_openie)
+        logger.debug(f"queries_ner_results_dict: {json_dumps_readable(queries_ner_results_dict)}")
+        logger.debug(f"queries_triple_results_dict: {json_dumps_readable(queries_triple_results_dict)}")
+        
     def get_fact_scores(self, query: str) -> np.ndarray:
         """
         Retrieves and computes normalized similarity scores between the given query and pre-stored fact embeddings.
