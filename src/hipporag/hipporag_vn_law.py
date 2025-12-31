@@ -191,6 +191,9 @@ class HippoRAGVnLaw(HippoRAG):
 
         # Performing QA
         queries_solutions, all_response_message, all_metadata = self.qa(queries)
+        logger.debug(f"queries_solutions ater qa {queries_solutions}")
+        logger.debug(f"all_response_message after qa: {all_response_message}")
+        logger.debug(f"all_metadata after qa: {all_metadata}")
 
         # Save results to a JSON file
         results_dir = 'outputs/results'
@@ -257,6 +260,7 @@ class HippoRAGVnLaw(HippoRAG):
                 - A list of metadata dictionaries associated with the results.
         """
         #Running inference for QA
+        logger.debug(f"Queries before qa: {queries}")
         all_qa_messages = []
 
         for query_solution in tqdm(queries, desc="Collecting QA prompts"):
@@ -384,6 +388,7 @@ class HippoRAGVnLaw(HippoRAG):
             top_k_docs = [self.chunk_embedding_store.get_row(self.passage_node_keys[idx])["content"] for idx in sorted_doc_ids[:num_to_retrieve]]
 
             retrieval_results.append(QuerySolution(question=query, docs=top_k_docs, doc_scores=sorted_doc_scores[:num_to_retrieve]))
+            logger.debug(f"retrieval_results: {json_dumps_readable(retrieval_results)}")
 
         retrieve_end_time = time.time()  # Record end time
 
