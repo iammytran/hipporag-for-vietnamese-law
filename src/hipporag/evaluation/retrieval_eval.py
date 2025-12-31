@@ -40,6 +40,8 @@ class RetrievalRecall(BaseMetric):
         example_eval_results = []
         pooled_eval_results = {f"Recall@{k}": 0.0 for k in k_list}
         for example_gold_docs, example_retrieved_docs in zip(gold_docs, retrieved_docs):
+            logger.debug(f"example_gold_docs: {example_gold_docs}")
+            logger.debug(f"example_retrieved_docs: {example_retrieved_docs}")
             if len(example_retrieved_docs) < k_list[-1]:
                 logger.warning(f"Length of retrieved docs ({len(example_retrieved_docs)}) is smaller than largest topk for recall score ({k_list[-1]})")
             
@@ -51,6 +53,9 @@ class RetrievalRecall(BaseMetric):
                 top_k_docs = example_retrieved_docs[:k]
                 # Calculate intersection with gold documents
                 relevant_retrieved = set(top_k_docs) & set(example_gold_docs)
+                logger.debug(f"set(top_k_docs): {set(top_k_docs)}")
+                logger.debug(f"set(example_gold_docs): {set(example_gold_docs)}")
+                logger.debug(f"relevant_retrieved: {relevant_retrieved}")
                 # Compute recall
                 if example_gold_docs:  # Avoid division by zero
                     example_eval_result[f"Recall@{k}"] = len(relevant_retrieved) / len(set(example_gold_docs))
