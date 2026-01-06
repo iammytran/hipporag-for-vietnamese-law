@@ -6,8 +6,11 @@ from copy import deepcopy
 from typing import Union, Optional, List, Dict, Any, Tuple, Literal
 import re
 import ast
+from .utils.logging_utils import get_logger
 from .prompts.filter_default_prompt_vietnamese_law import best_dspy_prompt_vn_law
 from .rerank import DSPyFilter
+
+logger = get_logger(__name__)
 
 class Fact(BaseModel):
     fact: list[list[str]] = Field(description="A list of facts, each fact is a list of 3 strings: [subject, predicate, object]")
@@ -37,6 +40,8 @@ class DSPyFilterVnLaw(DSPyFilter):
             dspy_saved = json.load(open(dspy_file_path, 'r'))
         else:
             dspy_saved = best_dspy_prompt_vn_law
+        
+        logger.debug(f"dspy_saved: {dspy_saved}")
 
         system_prompt = dspy_saved['prog']['system']
         message_template = [
