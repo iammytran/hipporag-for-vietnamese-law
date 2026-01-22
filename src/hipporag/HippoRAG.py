@@ -112,7 +112,7 @@ class HippoRAG:
             self.global_config.azure_embedding_endpoint = azure_embedding_endpoint
 
         _print_config = ",\n  ".join([f"{k} = {v}" for k, v in asdict(self.global_config).items()])
-        logger.debug(f"HippoRAG init with config:\n  {_print_config}\n")
+        # logger.debug(f"HippoRAG init with config:\n  {_print_config}\n")
 
         #LLM and embedding model specific working directories are created under every specified saving directories
         llm_label = self.global_config.llm_name.replace("/", "_")
@@ -445,7 +445,7 @@ class HippoRAG:
         if gold_docs is not None:
             k_list = [1, 2, 5, 10, 20, 30, 50, 100, 150, 200]
             overall_retrieval_result, example_retrieval_results = retrieval_recall_evaluator.calculate_metric_scores(gold_docs=gold_docs, retrieved_docs=[retrieval_result.docs for retrieval_result in retrieval_results], k_list=k_list)
-            logger.info(f"Evaluation results for retrieval: {overall_retrieval_result}")
+            # logger.info(f"Evaluation results for retrieval: {overall_retrieval_result}")
 
             return retrieval_results, overall_retrieval_result
         else:
@@ -513,7 +513,7 @@ class HippoRAG:
             overall_qa_em_result.update(overall_qa_f1_result)
             overall_qa_results = overall_qa_em_result
             overall_qa_results = {k: round(float(v), 4) for k, v in overall_qa_results.items()}
-            logger.info(f"Evaluation results for QA: {overall_qa_results}")
+            # logger.info(f"Evaluation results for QA: {overall_qa_results}")
 
             # Save retrieval and QA results
             for idx, q in enumerate(queries_solutions):
@@ -590,7 +590,7 @@ class HippoRAG:
             overall_retrieval_result, example_retrieval_results = retrieval_recall_evaluator.calculate_metric_scores(
                 gold_docs=gold_docs, retrieved_docs=[retrieval_result.docs for retrieval_result in retrieval_results],
                 k_list=k_list)
-            logger.info(f"Evaluation results for retrieval: {overall_retrieval_result}")
+            # logger.info(f"Evaluation results for retrieval: {overall_retrieval_result}")
 
             return retrieval_results, overall_retrieval_result
         else:
@@ -658,7 +658,7 @@ class HippoRAG:
             overall_qa_em_result.update(overall_qa_f1_result)
             overall_qa_results = overall_qa_em_result
             overall_qa_results = {k: round(float(v), 4) for k, v in overall_qa_results.items()}
-            logger.info(f"Evaluation results for QA: {overall_qa_results}")
+            # logger.info(f"Evaluation results for QA: {overall_qa_results}")
 
             # Save retrieval and QA results
             for idx, q in enumerate(queries_solutions):
@@ -755,7 +755,7 @@ class HippoRAG:
             current_graph_nodes = set()
 
         logger.info(f"Adding OpenIE triples to graph.")
-        logger.info(f"current_graph_nodes: {current_graph_nodes}")
+        # logger.info(f"current_graph_nodes: {current_graph_nodes}")
 
         for chunk_key, triples in tqdm(zip(chunk_ids, chunk_triples)):
             entities_in_chunk = set()
