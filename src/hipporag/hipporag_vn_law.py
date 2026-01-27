@@ -357,6 +357,7 @@ class HippoRAGVnLaw(HippoRAG):
         for q_idx, query in tqdm(enumerate(queries), desc="Retrieving", total=len(queries)):
             rerank_start = time.time()
             query_fact_scores = self.get_fact_scores(query)
+            logger.debug(f"query_fact_scores: {query_fact_scores}")
             top_k_fact_indices, top_k_facts, rerank_log = self.rerank_facts(query, query_fact_scores)
 
             logger.info(f"Top retrieved facts for query '{query}': {top_k_facts}")
