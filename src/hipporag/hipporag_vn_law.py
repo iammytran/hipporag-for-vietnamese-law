@@ -584,6 +584,8 @@ class HippoRAGVnLaw(HippoRAG):
             return np.array([])
             
         try:
+            logger.debug(f"len(fact_embeddings): {len(self.fact_embeddings)}")
+            logger.debug(f"fact_embeddings: {self.fact_embeddings}")
             query_fact_scores = np.dot(self.fact_embeddings, query_embedding.T) # shape: (#facts, )
             query_fact_scores = np.squeeze(query_fact_scores) if query_fact_scores.ndim == 2 else query_fact_scores
             query_fact_scores = min_max_normalize(query_fact_scores)
