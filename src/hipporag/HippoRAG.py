@@ -1486,8 +1486,9 @@ class HippoRAG:
         for phrase, phrase_id in phrases_and_ids:
             if phrase not in phrase_scores:
                 phrase_scores[phrase] = []
-
+            logger.debug(f"phrase: {phrase}")
             phrase_scores[phrase].append(phrase_weights[phrase_id])
+        logger.debug(f"phrase_scores: {phrase_scores}")
 
         # calculate average fact score for each phrase
         for phrase, scores in phrase_scores.items():
@@ -1497,6 +1498,8 @@ class HippoRAG:
             phrase_weights, linking_score_map = self.get_top_k_weights(link_top_k,
                                                                            phrase_weights,
                                                                            linking_score_map)  # at this stage, the length of linking_scope_map is determined by link_top_k
+
+        logger.debug(f"linking_score_map: {linking_score_map}")
 
         #Get passage scores according to chosen dense retrieval model
         dpr_sorted_doc_ids, dpr_sorted_doc_scores = self.dense_passage_retrieval(query)
