@@ -714,7 +714,7 @@ class HippoRAGVnLaw(HippoRAG):
                                                                            phrase_weights,
                                                                            linking_score_map)  # at this stage, the length of linking_scope_map is determined by link_top_k
 
-        logger.debug(f"linking_score_map: {linking_score_map}")
+        logger.debug(f"linking_score_map phrase_node: {linking_score_map}")
 
         #Get passage scores according to chosen dense retrieval model
         dpr_sorted_doc_ids, dpr_sorted_doc_scores = self.dense_passage_retrieval(query)
@@ -727,6 +727,8 @@ class HippoRAGVnLaw(HippoRAG):
             passage_weights[passage_node_id] = passage_dpr_score * passage_node_weight # dict(chunk_id: weights)
             passage_node_text = self.chunk_embedding_store.get_row(passage_node_key)["content"]
             linking_score_map[passage_node_text] = passage_dpr_score * passage_node_weight # dict(chunk_text: weights)
+        
+        logger.debug(f"linking_score_map passage_node: {linking_score_map}")
 
         #Combining phrase and passage scores into one array for PPR
         node_weights = phrase_weights + passage_weights # node_weights: dict (node_id: weight); node có thể là phrase hay passage
