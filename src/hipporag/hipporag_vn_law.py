@@ -630,3 +630,121 @@ class HippoRAGVnLaw(HippoRAG):
         sorted_doc_ids = np.argsort(query_doc_scores)[::-1]
         sorted_doc_scores = query_doc_scores[sorted_doc_ids.tolist()]
         return sorted_doc_ids, sorted_doc_scores
+
+    def graph_search_with_fact_entities(self, query: str,
+                                        link_top_k: int,
+                                        query_fact_scores: np.ndarray,
+                                        top_k_facts: List[Tuple],
+                                        top_k_fact_indices: List[str],
+                                        passage_node_weight: float = 0.05) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Computes document scores based on fact-based similarity and relevance using personalized
+        PageRank (PPR) and dense retrieval models. This function combines the signal from the relevant
+        facts identified with passage similarity and graph-based search for enhanced result ranking.
+
+        Parameters:
+            query (str): The input query string for which similarity and relevance computations
+                need to be performed.
+            link_top_k (int): The number of top phrases to include from the linking score map for
+                downstream processing.
+            query_fact_scores (np.ndarray): An array of scores representing fact-query similarity
+                for each of the provided facts.
+            top_k_facts (List[Tuple]): A list of top-ranked facts, where each fact is represented
+                as a tuple of its subject, predicate, and object.
+            top_k_fact_indices (List[str]): Corresponding indices or identifiers for the top-ranked
+                facts in the query_fact_scores array.
+            passage_node_weight (float): Default weight to scale passage scores in the graph.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]: A tuple containing two arrays:
+                - The first array corresponds to document IDs sorted based on their scores.
+                - The second array consists of the PPR scores associated with the sorted document IDs.
+        """
+
+        #Assigning phrase weights based on selected facts from previous steps.
+        linking_score_map = {}  # from phrase to the average scores of the facts that contain the phrase
+        phrase_scores = {}  # store all fact scores for each phrase regardless of whether they exist in the knowledge graph or not
+        phrase_weights = np.zeros(len(self.graph.vs['name']))
+        passage_weights = np.zeros(len(self.graph.vs['name']))
+        number_of_occurs = np.zeros(len(self.graph.vs['name']))
+
+        phrases_and_ids = set()
+
+        for rank, f in enumerate(top_k_facts):
+            subject_phrase = f[0].lower()
+            predicate_phrase = f[1].lower()
+            object_phrase = f[2].lower()
+            fact_score = query_fact_scores[
+                top_k_fact_indices[rank]] if query_fact_scores.ndim > 0 else query_fact_scores
+
+            for phrase in [subject_phrase, object_phrase]: # phrase: ("f[0], f[1]" trong fact)
+                phrase_key = compute_mdhash_id(
+                    content=phrase,
+                    prefix="entity-"
+                )
+                phrase_id = self.node_name_to_vertex_idx.get(phrase_key, None) #phase_key: 1 hash_id
+
+                if phrase_id is not None:
+                    weighted_fact_score = fact_score
+
+                    if len(self.ent_node_to_chunk_ids.get(phrase_key, set())) > 0:
+                        weighted_fact_score /= len(self.ent_node_to_chunk_ids[phrase_key])
+
+                    phrase_weights[phrase_id] += weighted_fact_score # dict: (phrase_id: weights)
+                    number_of_occurs[phrase_id] += 1
+
+                phrases_and_ids.add((phrase, phrase_id))
+
+        # lấy điểm trung bình phrase weights
+        phrase_weights /= number_of_occurs
+
+        for phrase, phrase_id in phrases_and_ids:
+            if phrase not in phrase_scores:
+                phrase_scores[phrase] = []
+            logger.debug(f"phrase: {phrase}")
+            phrase_scores[phrase].append(phrase_weights[phrase_id])
+        logger.debug(f"phrase_scores: {phrase_scores}")
+
+        # calculate average fact score for each phrase
+        for phrase, scores in phrase_scores.items():
+            linking_score_map[phrase] = float(np.mean(scores))
+
+        if link_top_k:
+            phrase_weights, linking_score_map = self.get_top_k_weights(link_top_k,
+                                                                           phrase_weights,
+                                                                           linking_score_map)  # at this stage, the length of linking_scope_map is determined by link_top_k
+
+        logger.debug(f"linking_score_map: {linking_score_map}")
+
+        #Get passage scores according to chosen dense retrieval model
+        dpr_sorted_doc_ids, dpr_sorted_doc_scores = self.dense_passage_retrieval(query)
+        normalized_dpr_sorted_scores = min_max_normalize(dpr_sorted_doc_scores)
+
+        for i, dpr_sorted_doc_id in enumerate(dpr_sorted_doc_ids.tolist()):
+            passage_node_key = self.passage_node_keys[dpr_sorted_doc_id]
+            passage_dpr_score = normalized_dpr_sorted_scores[i]
+            passage_node_id = self.node_name_to_vertex_idx[passage_node_key]
+            passage_weights[passage_node_id] = passage_dpr_score * passage_node_weight # dict(chunk_id: weights)
+            passage_node_text = self.chunk_embedding_store.get_row(passage_node_key)["content"]
+            linking_score_map[passage_node_text] = passage_dpr_score * passage_node_weight # dict(chunk_text: weights)
+
+        #Combining phrase and passage scores into one array for PPR
+        node_weights = phrase_weights + passage_weights # node_weights: dict (node_id: weight); node có thể là phrase hay passage
+
+        #Recording top 30 facts in linking_score_map
+        if len(linking_score_map) > 30:
+            linking_score_map = dict(sorted(linking_score_map.items(), key=lambda x: x[1], reverse=True)[:30])
+
+        assert sum(node_weights) > 0, f'No phrases found in the graph for the given facts: {top_k_facts}'
+
+        #Running PPR algorithm based on the passage and phrase weights previously assigned
+        ppr_start = time.time()
+        ppr_sorted_doc_ids, ppr_sorted_doc_scores = self.run_ppr(node_weights, damping=self.global_config.damping)
+        ppr_end = time.time()
+
+        self.ppr_time += (ppr_end - ppr_start)
+
+        assert len(ppr_sorted_doc_ids) == len(
+            self.passage_node_idxs), f"Doc prob length {len(ppr_sorted_doc_ids)} != corpus length {len(self.passage_node_idxs)}"
+
+        return ppr_sorted_doc_ids, ppr_sorted_doc_scores
