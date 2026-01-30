@@ -313,6 +313,7 @@ class HippoRAGVnLaw(HippoRAG):
 
         if num_to_retrieve is None:
             num_to_retrieve = self.global_config.retrieval_top_k
+            logger.debug(f"num_to_retrieve: {num_to_retrieve}")
 
         if gold_docs is not None:
             retrieval_recall_evaluator = RetrievalRecall(global_config=self.global_config)
@@ -386,9 +387,10 @@ class HippoRAGVnLaw(HippoRAG):
                                                                                          top_k_fact_indices=top_k_fact_indices,
                                                                                          passage_node_weight=self.global_config.passage_node_weight)
 
-            top_k_docs = [self.chunk_embedding_store.get_row(self.passage_node_keys[idx])["content"] for idx in sorted_doc_ids[:num_to_retrieve]]
+            top_k_docs = [self.chunk_embedding_store.get_row(self.passage_node_keys[idx])["content"] for idx in sorted_doc_ids[:self.doc_num_to_retrieve]]
+            logger.debug(f"top_k_docs: {top_k_docs}")
 
-            retrieval_results.append(QuerySolution(question=query, docs=top_k_docs, doc_scores=sorted_doc_scores[:num_to_retrieve]))
+            retrieval_results.append(QuerySolution(question=query, docs=top_k_docs, doc_scores=sorted_doc_scores[:self.doc_num_to_retrieve]))
             logger.debug(f"retrieval_results: {retrieval_results}")
 
         retrieve_end_time = time.time()  # Record end time
@@ -728,7 +730,7 @@ class HippoRAGVnLaw(HippoRAG):
             passage_node_text = self.chunk_embedding_store.get_row(passage_node_key)["content"]
             linking_score_map[passage_node_text] = passage_dpr_score * passage_node_weight # dict(chunk_text: weights)
         
-        logger.debug(f"linking_score_map passage_node: {linking_score_map}")
+        
 
         #Combining phrase and passage scores into one array for PPR
         node_weights = phrase_weights + passage_weights # node_weights: dict (node_id: weight); node có thể là phrase hay passage
@@ -737,6 +739,8 @@ class HippoRAGVnLaw(HippoRAG):
         #Recording top 30 facts in linking_score_map
         if len(linking_score_map) > 30:
             linking_score_map = dict(sorted(linking_score_map.items(), key=lambda x: x[1], reverse=True)[:30])
+        
+        logger.debug(f"linking_score_map passage_node: {linking_score_map}")
 
         assert sum(node_weights) > 0, f'No phrases found in the graph for the given facts: {top_k_facts}'
 
