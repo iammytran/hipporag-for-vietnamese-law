@@ -732,6 +732,7 @@ class HippoRAGVnLaw(HippoRAG):
 
         #Combining phrase and passage scores into one array for PPR
         node_weights = phrase_weights + passage_weights # node_weights: dict (node_id: weight); node có thể là phrase hay passage
+        logger.debug(f"node_weights: {node_weights}")
 
         #Recording top 30 facts in linking_score_map
         if len(linking_score_map) > 30:
