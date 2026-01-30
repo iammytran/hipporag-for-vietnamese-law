@@ -751,3 +751,52 @@ class HippoRAGVnLaw(HippoRAG):
             self.passage_node_idxs), f"Doc prob length {len(ppr_sorted_doc_ids)} != corpus length {len(self.passage_node_idxs)}"
 
         return ppr_sorted_doc_ids, ppr_sorted_doc_scores
+    
+    def run_ppr(self,
+                reset_prob: np.ndarray,
+                damping: float =0.5) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Runs Personalized PageRank (PPR) on a graph and computes relevance scores for
+        nodes corresponding to document passages. The method utilizes a damping
+        factor for teleportation during rank computation and can take a reset
+        probability array to influence the starting state of the computation.
+
+        Parameters:
+            reset_prob (np.ndarray): A 1-dimensional array specifying the reset
+                probability distribution for each node. The array must have a size
+                equal to the number of nodes in the graph. NaNs or negative values
+                within the array are replaced with zeros.
+            damping (float): A scalar specifying the damping factor for the
+                computation. Defaults to 0.5 if not provided or set to `None`.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]: A tuple containing two numpy arrays. The
+                first array represents the sorted node IDs of document passages based
+                on their relevance scores in descending order. The second array
+                contains the corresponding relevance scores of each document passage
+                in the same order.
+        """
+
+        if damping is None: damping = 0.5 # for potential compatibility
+        reset_prob = np.where(np.isnan(reset_prob) | (reset_prob < 0), 0, reset_prob)
+
+        logger.debug(f"node_name_to_vertex_idx: {self.node_name_to_vertex_idx}")
+        logger.debug(f"reset_prob: {reset_prob}")
+
+        pagerank_scores = self.graph.personalized_pagerank(
+            vertices=range(len(self.node_name_to_vertex_idx)),
+            damping=damping,
+            directed=False,
+            weights='weight',
+            reset=reset_prob,
+            implementation='prpack'
+        )
+
+        logger.debug(f"pagerank_scores: {pagerank_scores}")
+
+        doc_scores = np.array([pagerank_scores[idx] for idx in self.passage_node_idxs])
+        logger.debug(f"doc_scores: {doc_scores}")
+        sorted_doc_ids = np.argsort(doc_scores)[::-1]
+        sorted_doc_scores = doc_scores[sorted_doc_ids.tolist()]
+
+        return sorted_doc_ids, sorted_doc_scores
