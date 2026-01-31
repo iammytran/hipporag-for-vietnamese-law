@@ -804,3 +804,54 @@ class HippoRAGVnLaw(HippoRAG):
         sorted_doc_scores = doc_scores[sorted_doc_ids.tolist()]
 
         return sorted_doc_ids, sorted_doc_scores
+    
+    def rerank_facts(self, query: str, query_fact_scores: np.ndarray) -> Tuple[List[int], List[Tuple], dict]:
+        """
+
+        Args:
+
+        Returns:
+            top_k_fact_indicies:
+            top_k_facts:
+            rerank_log (dict): {'facts_before_rerank': candidate_facts, 'facts_after_rerank': top_k_facts}
+                - candidate_facts (list): list of link_top_k facts (each fact is a relation triple in tuple data type).
+                - top_k_facts:
+
+
+        """
+        # load args
+        link_top_k: int = self.global_config.linking_top_k
+        
+        # Check if there are any facts to rerank
+        if len(query_fact_scores) == 0 or len(self.fact_node_keys) == 0:
+            logger.warning("No facts available for reranking. Returning empty lists.")
+            return [], [], {'facts_before_rerank': [], 'facts_after_rerank': []}
+            
+        try:
+            # Get the top k facts by score
+            if len(query_fact_scores) <= link_top_k:
+                # If we have fewer facts than requested, use all of them
+                candidate_fact_indices = np.argsort(query_fact_scores)[::-1].tolist()
+            else:
+                # Otherwise get the top k
+                candidate_fact_indices = np.argsort(query_fact_scores)[-link_top_k:][::-1].tolist()
+                
+            # Get the actual fact IDs
+            real_candidate_fact_ids = [self.fact_node_keys[idx] for idx in candidate_fact_indices]
+            fact_row_dict = self.fact_embedding_store.get_rows(real_candidate_fact_ids)
+            candidate_facts = [eval(fact_row_dict[id]['content']) for id in real_candidate_fact_ids]
+            
+            # Rerank the facts
+            top_k_fact_indices, top_k_facts, reranker_dict = self.rerank_filter(query,
+                                                                                candidate_facts,
+                                                                                candidate_fact_indices,
+                                                                                len_after_rerank=link_top_k)
+            
+            rerank_log = {'facts_before_rerank': candidate_facts, 'facts_after_rerank': top_k_facts}
+            logger.debug(f"rerank_log: {rerank_log}")
+            
+            return top_k_fact_indices, top_k_facts, rerank_log
+            
+        except Exception as e:
+            logger.error(f"Error in rerank_facts: {str(e)}")
+            return [], [], {'facts_before_rerank': [], 'facts_after_rerank': [], 'error': str(e)}

@@ -122,7 +122,7 @@ def main():
         force_openie_from_scratch=force_openie_from_scratch,
         rerank_dspy_file_path="src/hipporag/prompts/dspy_prompts/filter_llama3.3-70B-Instruct.json",
         retrieval_top_k=3,
-        linking_top_k=3,
+        # linking_top_k=5,
         max_qa_steps=3,
         qa_top_k=3,
         graph_type="facts_and_sim_passage_node_unidirectional",
