@@ -746,7 +746,8 @@ class HippoRAGVnLaw(HippoRAG):
 
         #Running PPR algorithm based on the passage and phrase weights previously assigned
         ppr_start = time.time()
-        ppr_sorted_doc_ids, ppr_sorted_doc_scores = self.run_ppr(node_weights, damping=self.global_config.damping)
+        # ppr_sorted_doc_ids, ppr_sorted_doc_scores = self.run_ppr(node_weights, damping=self.global_config.damping)
+        ppr_sorted_doc_ids, ppr_sorted_doc_scores = self.run_ppr_debug(node_weights, damping=self.global_config.damping)
         ppr_end = time.time()
 
         self.ppr_time += (ppr_end - ppr_start)
@@ -800,6 +801,60 @@ class HippoRAGVnLaw(HippoRAG):
 
         doc_scores = np.array([pagerank_scores[idx] for idx in self.passage_node_idxs])
         logger.debug(f"doc_scores: {doc_scores}")
+        sorted_doc_ids = np.argsort(doc_scores)[::-1]
+        sorted_doc_scores = doc_scores[sorted_doc_ids.tolist()]
+
+        return sorted_doc_ids, sorted_doc_scores
+
+    def run_ppr_debug(self, reset_prob: np.ndarray, damping: float = 0.5, max_iter: int = 20) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Debug version of PPR that logs human-readable node names at each iteration.
+        """
+        if damping is None: damping = 0.5
+        reset_prob = np.where(np.isnan(reset_prob) | (reset_prob < 0), 0, reset_prob)
+        
+        # 1. Reverse mapping: Index -> Name
+        idx_to_node_name = {v: k for k, v in self.node_name_to_vertex_idx.items()}
+        
+        # 2. Normalize reset_prob (Sum to 1.0)
+        r = reset_prob / np.sum(reset_prob) if np.sum(reset_prob) > 0 else reset_prob
+        
+        # 3. Build the Adjacency & Transition Matrix
+        # We use directed=False (symmetric) to match your original call
+        adj = self.graph.get_adjacency_sparse(attribute='weight')
+        adj = adj + adj.T  
+        
+        col_sums = np.array(adj.sum(axis=0)).flatten()
+        M = adj.multiply(1.0 / np.where(col_sums == 0, 1, col_sums))
+
+        # 4. Power Iteration with Logging
+        v = r.copy()
+        logger.info(f"Starting PPR Debug. Damping: {damping}, Graph Size: {len(v)} nodes.")
+        
+        for i in range(max_iter):
+            v_next = damping * (M @ v) + (1 - damping) * r
+            
+            # --- DEBUG SECTION: Node Name Reporting ---
+            diff = np.linalg.norm(v_next - v, ord=1)
+            
+            # Get indices of the 3 highest scoring nodes
+            top_indices = np.argsort(v_next)[-3:][::-1]
+            
+            logger.debug(f"--- Iteration {i} (Delta: {diff:.6f}) ---")
+            for rank, idx in enumerate(top_indices, 1):
+                name = idx_to_node_name.get(idx, f"ID_{idx}")
+                score = v_next[idx]
+                logger.debug(f"   #{rank} {name:<40} | Score: {score:.4f}")
+            # ------------------------------------------
+
+            v = v_next
+            if diff < 1e-6:
+                logger.info(f"Converged at iteration {i}")
+                break
+
+        # 5. Extract and Sort for Document Passages
+        pagerank_scores = v
+        doc_scores = np.array([pagerank_scores[idx] for idx in self.passage_node_idxs])
         sorted_doc_ids = np.argsort(doc_scores)[::-1]
         sorted_doc_scores = doc_scores[sorted_doc_ids.tolist()]
 
