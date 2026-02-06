@@ -5,6 +5,7 @@ from typing import Union, Optional, List, Dict, Set, Any, Tuple, Literal
 import logging
 from copy import deepcopy
 import pandas as pd
+import re
 
 from .utils.misc_utils import compute_mdhash_id, NerRawOutput, TripleRawOutput
 
@@ -64,7 +65,13 @@ class EmbeddingStore:
         nodes_dict = {}
 
         for text in texts:
-            nodes_dict[compute_mdhash_id(text, prefix=self.namespace + "-")] = {'content': text}
+            # get timestamp
+            match = re.search(r'\b\d{4}\b', text)
+            if match:
+                year = match.group(0)
+            else:
+                logger.debug(f"No year found in the text chunk {text}")
+            nodes_dict[compute_mdhash_id(text, prefix=self.namespace + "-")] = {'content': text, 'time': year}
 
         # Get all hash_ids from the input dictionary.
         all_hash_ids = list(nodes_dict.keys())
@@ -84,45 +91,49 @@ class EmbeddingStore:
 
         # Prepare the texts to encode from the "content" field.
         texts_to_encode = [nodes_dict[hash_id]["content"] for hash_id in missing_ids]
+        timestamps_to_encode = [nodes_dict[hash_id]["time"] for hash_id in missing_ids]
 
         missing_embeddings = self.embedding_model.batch_encode(texts_to_encode)
 
-        self._upsert(missing_ids, texts_to_encode, missing_embeddings)
+        self._upsert(missing_ids, texts_to_encode, missing_embeddings, timestamps_to_encode)
 
     def _load_data(self):
         if os.path.exists(self.filename):
             df = pd.read_parquet(self.filename)
             self.hash_ids, self.texts, self.embeddings = df["hash_id"].values.tolist(), df["content"].values.tolist(), df["embedding"].values.tolist()
+            self.timestamps = df["time"].values.tolist() if "time" in df.columns else [None] * len(self.hash_ids)
             self.hash_id_to_idx = {h: idx for idx, h in enumerate(self.hash_ids)}
             self.hash_id_to_row = {
-                h: {"hash_id": h, "content": t}
-                for h, t in zip(self.hash_ids, self.texts)
+                h: {"hash_id": h, "content": t, "time": ts}
+                for h, t, ts in zip(self.hash_ids, self.texts, self.timestamps)
             }
             self.hash_id_to_text = {h: self.texts[idx] for idx, h in enumerate(self.hash_ids)}
             self.text_to_hash_id = {self.texts[idx]: h  for idx, h in enumerate(self.hash_ids)}
-            assert len(self.hash_ids) == len(self.texts) == len(self.embeddings)
+            assert len(self.hash_ids) == len(self.texts) == len(self.embeddings) == len(self.timestamps)
             logger.info(f"Loaded {len(self.hash_ids)} records from {self.filename}")
         else:
-            self.hash_ids, self.texts, self.embeddings = [], [], []
+            self.hash_ids, self.texts, self.embeddings, self.timestamps = [], [], [], []
             self.hash_id_to_idx, self.hash_id_to_row = {}, {}
 
     def _save_data(self):
         data_to_save = pd.DataFrame({
             "hash_id": self.hash_ids,
             "content": self.texts,
-            "embedding": self.embeddings
+            "embedding": self.embeddings,
+            "time": self.timestamps
         })
         data_to_save.to_parquet(self.filename, index=False)
-        self.hash_id_to_row = {h: {"hash_id": h, "content": t} for h, t, e in zip(self.hash_ids, self.texts, self.embeddings)}
+        self.hash_id_to_row = {h: {"hash_id": h, "content": t, "time": ts} for h, t, ts in zip(self.hash_ids, self.texts, self.timestamps)}
         self.hash_id_to_idx = {h: idx for idx, h in enumerate(self.hash_ids)}
         self.hash_id_to_text = {h: self.texts[idx] for idx, h in enumerate(self.hash_ids)}
         self.text_to_hash_id = {self.texts[idx]: h for idx, h in enumerate(self.hash_ids)}
         logger.info(f"Saved {len(self.hash_ids)} records to {self.filename}")
 
-    def _upsert(self, hash_ids, texts, embeddings):
+    def _upsert(self, hash_ids, texts, embeddings, timestamps):
         self.embeddings.extend(embeddings)
         self.hash_ids.extend(hash_ids)
         self.texts.extend(texts)
+        self.timestamps.extend(timestamps)
 
         logger.info(f"Saving new records.")
         self._save_data()
@@ -139,6 +150,7 @@ class EmbeddingStore:
             self.hash_ids.pop(idx)
             self.texts.pop(idx)
             self.embeddings.pop(idx)
+            self.timestamps.pop(idx)
 
         logger.info(f"Saving record after deletion.")
         self._save_data()

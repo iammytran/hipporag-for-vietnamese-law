@@ -720,6 +720,42 @@ class HippoRAGVnLaw(HippoRAG):
 
         #Get passage scores according to chosen dense retrieval model
         dpr_sorted_doc_ids, dpr_sorted_doc_scores = self.dense_passage_retrieval(query)
+
+        # Apply a gentle score boost for newer documents among very similar ones.
+        content_to_passages = defaultdict(list)
+        for i, doc_id in enumerate(dpr_sorted_doc_ids):
+            passage_node_key = self.passage_node_keys[doc_id]
+            row = self.chunk_embedding_store.get_row(passage_node_key)
+            content = row["content"]
+            timestamp = row["time"]
+            score = dpr_sorted_doc_scores[i]
+            content_to_passages[content].append({'id': doc_id, 'key': passage_node_key, 'time': timestamp, 'score': score, 'original_index': i})
+
+        # Only apply a small boost if scores are close, to act as a tie-breaker
+        score_boost_factor = 1.05  # 5% boost
+        score_similarity_threshold = 0.05 # Scores must be within 5% of each other
+
+        for content, passages in content_to_passages.items():
+            if len(passages) > 1:
+                passages.sort(key=lambda p: p['score'], reverse=True)
+                highest_score = passages[0]['score']
+                
+                # Find the latest passage among those with very similar scores
+                similar_passages = [p for p in passages if (highest_score - p['score']) / highest_score < score_similarity_threshold]
+                
+                if len(similar_passages) > 1:
+                    similar_passages.sort(key=lambda p: p['time'] or '0', reverse=True)
+                    latest_passage = similar_passages[0]
+                    
+                    # Apply a small boost to the latest one
+                    original_score_index = latest_passage['original_index']
+                    dpr_sorted_doc_scores[original_score_index] *= score_boost_factor
+
+        # Re-sort based on potentially updated scores
+        resort_indices = np.argsort(dpr_sorted_doc_scores)[::-1]
+        dpr_sorted_doc_ids = dpr_sorted_doc_ids[resort_indices]
+        dpr_sorted_doc_scores = dpr_sorted_doc_scores[resort_indices]
+
         normalized_dpr_sorted_scores = min_max_normalize(dpr_sorted_doc_scores)
 
         for i, dpr_sorted_doc_id in enumerate(dpr_sorted_doc_ids.tolist()):
