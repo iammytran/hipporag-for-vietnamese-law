@@ -413,25 +413,24 @@ class HippoRAGVnLaw(HippoRAG):
                 logger.debug(f"Number of Similar Chunk Clusters: {len(clusters)}")
                 # Boost score for the latest document in each cluster
                 for i, cluster in enumerate(clusters):
-                    if len(cluster) > 1:
-                        logger.debug(f"Cluster {i+1}:")
-                        passages_in_cluster = []
-                        for local_idx in cluster:
-                            doc_id = top_k_doc_ids[local_idx]
-                            passage_node_key = self.passage_node_keys[doc_id]
-                            row = self.chunk_embedding_store.get_row(passage_node_key)
-                            logger.debug(f"  - Doc ID: {doc_id}, Content: {row['content'][:100]}...")
-                            passages_in_cluster.append({
-                                'id': doc_id,
-                                'time': row.get("time"),
-                                'local_idx': local_idx
-                            })
-                        
-                        passages_in_cluster.sort(key=lambda p: p['time'] or '0', reverse=True)
-                        latest_passage = passages_in_cluster[0]
-                        
-                        # Apply a 20% score boost to the latest passage in the cluster
-                        top_k_doc_scores[latest_passage['local_idx']] *= 1.2
+                    logger.debug(f"Cluster {i+1}:")
+                    passages_in_cluster = []
+                    for local_idx in cluster:
+                        doc_id = top_k_doc_ids[local_idx]
+                        passage_node_key = self.passage_node_keys[doc_id]
+                        row = self.chunk_embedding_store.get_row(passage_node_key)
+                        logger.debug(f"  - Doc ID: {doc_id}, Content: {row['content'][:100]}...")
+                        passages_in_cluster.append({
+                            'id': doc_id,
+                            'time': row.get("time"),
+                            'local_idx': local_idx
+                        })
+                    
+                    passages_in_cluster.sort(key=lambda p: p['time'] or '0', reverse=True)
+                    latest_passage = passages_in_cluster[0]
+                    
+                    # Apply a 20% score boost to the latest passage in the cluster
+                    top_k_doc_scores[latest_passage['local_idx']] *= 1.2
 
             # Re-sort based on the new scores
             resorted_indices = np.argsort(top_k_doc_scores)[::-1]
