@@ -66,6 +66,7 @@ class EmbeddingStore:
 
         for text in texts:
             # get timestamp
+            year = 0
             match = re.search(r'\b\d{4}\b', text)
             if match:
                 year = match.group(0)
