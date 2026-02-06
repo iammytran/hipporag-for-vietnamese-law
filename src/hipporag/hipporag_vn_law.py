@@ -405,7 +405,7 @@ class HippoRAGVnLaw(HippoRAG):
                         current_cluster = [i]
                         visited[i] = True
                         for j in range(i + 1, len(top_k_doc_ids)):
-                            if not visited[j] and similarity_matrix[i, j] > 0.95:
+                            if not visited[j] and similarity_matrix[i, j] > 0.55:
                                 current_cluster.append(j)
                                 visited[j] = True
                         clusters.append(current_cluster)
@@ -438,7 +438,7 @@ class HippoRAGVnLaw(HippoRAG):
 
             top_k_docs = [self.chunk_embedding_store.get_row(self.passage_node_keys[idx])["content"] for idx in final_doc_ids]
             logger.debug(f"top_k_docs: {top_k_docs}")
-            
+
             retrieval_results.append(QuerySolution(question=query, docs=top_k_docs, doc_scores=final_doc_scores))
             logger.debug(f"retrieval_results: {retrieval_results}")
 
