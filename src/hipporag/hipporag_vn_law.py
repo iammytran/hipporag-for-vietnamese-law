@@ -387,10 +387,59 @@ class HippoRAGVnLaw(HippoRAG):
                                                                                          top_k_fact_indices=top_k_fact_indices,
                                                                                          passage_node_weight=self.global_config.passage_node_weight)
 
-            top_k_docs = [self.chunk_embedding_store.get_row(self.passage_node_keys[idx])["content"] for idx in sorted_doc_ids[:num_to_retrieve]]
-            logger.debug(f"top_k_docs: {top_k_docs}")
+            top_k_doc_ids = sorted_doc_ids[:num_to_retrieve]
+            top_k_doc_scores = sorted_doc_scores[:num_to_retrieve]
 
-            retrieval_results.append(QuerySolution(question=query, docs=top_k_docs, doc_scores=sorted_doc_scores[:num_to_retrieve]))
+            # Use cosine similarity to detect and rank similar chunks
+            if len(top_k_doc_ids) > 1:
+                top_k_embeddings = self.passage_embeddings[top_k_doc_ids]
+                
+                # Calculate cosine similarity matrix
+                similarity_matrix = np.dot(top_k_embeddings, top_k_embeddings.T)
+                
+                # Create clusters of similar documents
+                visited = [False] * len(top_k_doc_ids)
+                clusters = []
+                for i in range(len(top_k_doc_ids)):
+                    if not visited[i]:
+                        current_cluster = [i]
+                        visited[i] = True
+                        for j in range(i + 1, len(top_k_doc_ids)):
+                            if not visited[j] and similarity_matrix[i, j] > 0.95:
+                                current_cluster.append(j)
+                                visited[j] = True
+                        clusters.append(current_cluster)
+
+                logger.debug(f"Number of Similar Chunk Clusters: {len(clusters)}")
+                # Boost score for the latest document in each cluster
+                for cluster in clusters:
+                    if len(cluster) > 1:
+                        passages_in_cluster = []
+                        for local_idx in cluster:
+                            doc_id = top_k_doc_ids[local_idx]
+                            passage_node_key = self.passage_node_keys[doc_id]
+                            row = self.chunk_embedding_store.get_row(passage_node_key)
+                            passages_in_cluster.append({
+                                'id': doc_id,
+                                'time': row.get("time"),
+                                'local_idx': local_idx
+                            })
+                        
+                        passages_in_cluster.sort(key=lambda p: p['time'] or '0', reverse=True)
+                        latest_passage = passages_in_cluster[0]
+                        
+                        # Apply a 20% score boost to the latest passage in the cluster
+                        top_k_doc_scores[latest_passage['local_idx']] *= 1.2
+
+            # Re-sort based on the new scores
+            resorted_indices = np.argsort(top_k_doc_scores)[::-1]
+            final_doc_ids = top_k_doc_ids[resorted_indices]
+            final_doc_scores = top_k_doc_scores[resorted_indices]
+
+            top_k_docs = [self.chunk_embedding_store.get_row(self.passage_node_keys[idx])["content"] for idx in final_doc_ids]
+            logger.debug(f"top_k_docs: {top_k_docs}")
+            
+            retrieval_results.append(QuerySolution(question=query, docs=top_k_docs, doc_scores=final_doc_scores))
             logger.debug(f"retrieval_results: {retrieval_results}")
 
         retrieve_end_time = time.time()  # Record end time
@@ -720,42 +769,6 @@ class HippoRAGVnLaw(HippoRAG):
 
         #Get passage scores according to chosen dense retrieval model
         dpr_sorted_doc_ids, dpr_sorted_doc_scores = self.dense_passage_retrieval(query)
-
-        # Apply a gentle score boost for newer documents among very similar ones.
-        content_to_passages = defaultdict(list)
-        for i, doc_id in enumerate(dpr_sorted_doc_ids):
-            passage_node_key = self.passage_node_keys[doc_id]
-            row = self.chunk_embedding_store.get_row(passage_node_key)
-            content = row["content"]
-            timestamp = row["time"]
-            score = dpr_sorted_doc_scores[i]
-            content_to_passages[content].append({'id': doc_id, 'key': passage_node_key, 'time': timestamp, 'score': score, 'original_index': i})
-
-        # Only apply a small boost if scores are close, to act as a tie-breaker
-        score_boost_factor = 1.05  # 5% boost
-        score_similarity_threshold = 0.05 # Scores must be within 5% of each other
-
-        for content, passages in content_to_passages.items():
-            if len(passages) > 1:
-                passages.sort(key=lambda p: p['score'], reverse=True)
-                highest_score = passages[0]['score']
-                
-                # Find the latest passage among those with very similar scores
-                similar_passages = [p for p in passages if (highest_score - p['score']) / highest_score < score_similarity_threshold]
-                
-                if len(similar_passages) > 1:
-                    similar_passages.sort(key=lambda p: p['time'] or '0', reverse=True)
-                    latest_passage = similar_passages[0]
-                    
-                    # Apply a small boost to the latest one
-                    original_score_index = latest_passage['original_index']
-                    dpr_sorted_doc_scores[original_score_index] *= score_boost_factor
-
-        # Re-sort based on potentially updated scores
-        resort_indices = np.argsort(dpr_sorted_doc_scores)[::-1]
-        dpr_sorted_doc_ids = dpr_sorted_doc_ids[resort_indices]
-        dpr_sorted_doc_scores = dpr_sorted_doc_scores[resort_indices]
-
         normalized_dpr_sorted_scores = min_max_normalize(dpr_sorted_doc_scores)
 
         for i, dpr_sorted_doc_id in enumerate(dpr_sorted_doc_ids.tolist()):
@@ -790,7 +803,6 @@ class HippoRAGVnLaw(HippoRAG):
 
         assert len(ppr_sorted_doc_ids) == len(
             self.passage_node_idxs), f"Doc prob length {len(ppr_sorted_doc_ids)} != corpus length {len(self.passage_node_idxs)}"
-
         return ppr_sorted_doc_ids, ppr_sorted_doc_scores
     
     def run_ppr(self,
