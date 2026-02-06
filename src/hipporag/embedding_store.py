@@ -123,6 +123,7 @@ class EmbeddingStore:
             "embedding": self.embeddings,
             "time": self.timestamps
         })
+        data_to_save["time"] = data_to_save["time"].astype(str)
         data_to_save.to_parquet(self.filename, index=False)
         self.hash_id_to_row = {h: {"hash_id": h, "content": t, "time": ts} for h, t, ts in zip(self.hash_ids, self.texts, self.timestamps)}
         self.hash_id_to_idx = {h: idx for idx, h in enumerate(self.hash_ids)}
