@@ -405,20 +405,22 @@ class HippoRAGVnLaw(HippoRAG):
                         current_cluster = [i]
                         visited[i] = True
                         for j in range(i + 1, len(top_k_doc_ids)):
-                            if not visited[j] and similarity_matrix[i, j] > 0.55:
+                            if not visited[j] and similarity_matrix[i, j] > 0.65:
                                 current_cluster.append(j)
                                 visited[j] = True
                         clusters.append(current_cluster)
 
                 logger.debug(f"Number of Similar Chunk Clusters: {len(clusters)}")
                 # Boost score for the latest document in each cluster
-                for cluster in clusters:
+                for i, cluster in enumerate(clusters):
                     if len(cluster) > 1:
+                        logger.debug(f"Cluster {i+1}:")
                         passages_in_cluster = []
                         for local_idx in cluster:
                             doc_id = top_k_doc_ids[local_idx]
                             passage_node_key = self.passage_node_keys[doc_id]
                             row = self.chunk_embedding_store.get_row(passage_node_key)
+                            logger.debug(f"  - Doc ID: {doc_id}, Content: {row['content'][:100]}...")
                             passages_in_cluster.append({
                                 'id': doc_id,
                                 'time': row.get("time"),
