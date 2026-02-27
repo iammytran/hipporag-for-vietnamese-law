@@ -91,8 +91,8 @@ class StandardRAG:
                 embedding_model_name=self.global_config.embedding_model_name)(global_config=self.global_config,
                                                                               embedding_model_name=self.global_config.embedding_model_name)
 
-        import ipdb;
-        ipdb.set_trace()
+        # import ipdb;
+        # ipdb.set_trace()
 
         self.chunk_embedding_store = EmbeddingStore(self.embedding_model,
                                                     os.path.join(self.working_dir, "chunk_embeddings"),
