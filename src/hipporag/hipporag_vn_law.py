@@ -183,10 +183,10 @@ class HippoRAGVnLaw(HippoRAG):
 
         if not isinstance(queries[0], QuerySolution):
             if gold_docs is not None:
-                print(f"Có Gold_Docs")
+                logger.info(f"Có Gold_Docs")
                 queries, overall_retrieval_result = self.retrieve(queries=queries, gold_docs=gold_docs)
             else:
-                print(f"Khôngg có Gold_Docs")
+                logger.info(f"Khôngg có Gold_Docs")
                 queries = self.retrieve(queries=queries)
 
         # Performing QA
@@ -315,8 +315,10 @@ class HippoRAGVnLaw(HippoRAG):
             num_to_retrieve = self.global_config.retrieval_top_k
             logger.debug(f"num_to_retrieve: {num_to_retrieve}")
 
-        if gold_docs is not None:
-            retrieval_recall_evaluator = RetrievalRecall(global_config=self.global_config)
+        retrieval_recall_evaluator = RetrievalRecall(global_config=self.global_config)
+
+        # if gold_docs is not None:
+        #     retrieval_recall_evaluator = RetrievalRecall(global_config=self.global_config)
 
         if not self.ready_to_retrieve:
             print("prepare_retrieval_objects dc activated!")
