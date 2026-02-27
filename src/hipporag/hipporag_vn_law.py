@@ -428,11 +428,11 @@ class HippoRAGVnLaw(HippoRAG):
                             'local_idx': local_idx
                         })
                     
-                    passages_in_cluster.sort(key=lambda p: p['time'] or '0', reverse=True)
-                    latest_passage = passages_in_cluster[0]
+                    # passages_in_cluster.sort(key=lambda p: p['time'] or '0', reverse=True)
+                    # latest_passage = passages_in_cluster[0]
                     
-                    # Apply a 20% score boost to the latest passage in the cluster
-                    top_k_doc_scores[latest_passage['local_idx']] *= 1.2
+                    # # Apply a 20% score boost to the latest passage in the cluster
+                    # top_k_doc_scores[latest_passage['local_idx']] *= 1.2
 
             # Re-sort based on the new scores
             resorted_indices = np.argsort(top_k_doc_scores)[::-1]
