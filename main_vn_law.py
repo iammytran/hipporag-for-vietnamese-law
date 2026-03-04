@@ -7,6 +7,7 @@ from src.hipporag.utils.misc_utils import string_to_bool
 from src.hipporag.utils.config_utils import BaseConfig
 
 import argparse
+import pandas as pd
 
 # os.environ["LOG_LEVEL"] = "DEBUG"
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -91,6 +92,14 @@ def main():
         save_dir = save_dir + '/' + dataset_name
     else:
         save_dir = save_dir + '_' + dataset_name
+
+    ### handle if it's legal_corpus
+    # 1. Đọc file Parquet
+    df = pd.read_parquet("reproduce/dataset/legal_corpus.parquet")
+
+    # 2. Chuyển thành JSON file
+    # orient='records' giúp giữ đúng định dạng list of dicts như ban đầu của bạn
+    df.to_json("reproduce/dataset/legal_corpus.json", orient='records', force_ascii=False, indent=4)
 
     corpus_path = f"reproduce/dataset/{dataset_name}_corpus.json"
     with open(corpus_path, "r") as f:
