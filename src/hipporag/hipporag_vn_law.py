@@ -95,6 +95,8 @@ class HippoRAGVnLaw(HippoRAG):
 
         if len(chunk_keys_to_process) > 0:
             new_ner_results_dict, new_triple_results_dict = self.openie.batch_openie(new_openie_rows)
+            self.openie.save_results_to_json(new_ner_results_dict, new_triple_results_dict)
+            logger.info("Saved NER and Triples to json successfully!")
             self.merge_openie_results(all_openie_info, new_openie_rows, new_ner_results_dict, new_triple_results_dict)
 
         if self.global_config.save_openie:

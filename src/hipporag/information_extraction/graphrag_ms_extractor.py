@@ -181,3 +181,33 @@ class GraphRagMSExtractor(OpenIE):
                 triple_results[hid] = tri_out
 
         return ner_results, triple_results
+    
+    def save_results_to_json(self, ner_results: Dict[str, NerRawOutput], triple_results: Dict[str, TripleRawOutput], output_dir: str = "outputs"):
+            import dataclasses
+            import os
+
+            # Tạo thư mục nếu chưa có
+            os.makedirs(output_dir, exist_ok=True)
+
+            # 1. Chuyển đổi dữ liệu NER
+            ner_serializable = {}
+            for k, v in ner_results.items():
+                # v là đối tượng NerRawOutput, dùng asdict để biến thành dict
+                ner_serializable[k] = dataclasses.asdict(v)
+
+            # 2. Chuyển đổi dữ liệu Triple
+            triple_serializable = {}
+            for k, v in triple_results.items():
+                triple_serializable[k] = dataclasses.asdict(v)
+
+            # Lưu file NER
+            ner_path = os.path.join(output_dir, "ner_results.json")
+            with open(ner_path, "w", encoding="utf-8") as f:
+                json.dump(ner_serializable, f, ensure_ascii=False, indent=4)
+            logger.info(f"Đã lưu kết quả NER vào: {ner_path}")
+
+            # Lưu file Triple
+            triple_path = os.path.join(output_dir, "triple_results.json")
+            with open(triple_path, "w", encoding="utf-8") as f:
+                json.dump(triple_serializable, f, ensure_ascii=False, indent=4)
+            logger.info(f"Đã lưu kết quả Triples vào: {triple_path}")
