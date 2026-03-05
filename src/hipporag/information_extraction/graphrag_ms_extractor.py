@@ -111,7 +111,7 @@ class GraphRagMSExtractor(OpenIE):
         def process_single_chunk(hash_id, doc_info):
             content = doc_info["content"]
             # Sử dụng GRAPH_PROMPT mới (One-pass: trả về cả entities và triples)
-            prompt_messages = self._create_prompt(content)
+            prompt_messages = self.prompt_template_manager.render(name='graphrag_ms_vietnamese_law', passage=content)
             
             try:
                 # LLM INFERENCE (Gọi 1 lần duy nhất)

@@ -1026,7 +1026,6 @@ class HippoRAG:
         self.add_new_edges()
 
         logger.info(f"Graph construction completed!")
-        print(self.get_graph_info())
 
     def add_new_nodes(self):
         """

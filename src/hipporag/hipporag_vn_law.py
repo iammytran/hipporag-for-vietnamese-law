@@ -324,7 +324,6 @@ class HippoRAGVnLaw(HippoRAG):
         #     retrieval_recall_evaluator = RetrievalRecall(global_config=self.global_config)
 
         if not self.ready_to_retrieve:
-            print("prepare_retrieval_objects dc activated!")
             self.prepare_retrieval_objects()
 
         #self.get_query_embeddings(queries)
