@@ -136,7 +136,6 @@ def main():
         qa_top_k=3,
         graph_type="facts_and_sim_passage_node_unidirectional",
         embedding_batch_size=embedding_batch_size,
-        max_new_tokens=None,
         corpus_len=len(corpus),
         openie_mode=args.openie_mode
     )
