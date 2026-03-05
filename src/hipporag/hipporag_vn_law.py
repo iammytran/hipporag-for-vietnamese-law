@@ -23,6 +23,7 @@ from .embedding_store import EmbeddingStore
 from .information_extraction import OpenIE
 from .information_extraction.openie_vllm_offline import VLLMOfflineOpenIE
 from .information_extraction.openie_transformers_offline_vn_law import TransformersOfflineOpenIEVnLaw
+from .information_extraction.graphrag_ms_extractor import GraphRagMSExtractor
 from .evaluation.retrieval_eval import RetrievalRecall
 from .evaluation.qa_eval import QAExactMatch, QAF1Score
 from .prompts.linking import get_query_instruction_vn
@@ -62,6 +63,8 @@ class HippoRAGVnLaw(HippoRAG):
             self.openie = VLLMOfflineOpenIE(self.global_config)
         elif self.global_config.openie_mode ==  'Transformers-offline':
             self.openie = TransformersOfflineOpenIEVnLaw(self.global_config)
+        elif self.global_config.openie_mode == 'prompt':
+            self.openie = GraphRagMSExtractor(self.global_config)
 
         self.rerank_filter = DSPyFilterVnLaw(self)
 
@@ -99,12 +102,12 @@ class HippoRAGVnLaw(HippoRAG):
 
         ner_results_dict, triple_results_dict = reformat_openie_results(all_openie_info)
         
-        # logging
-        serializable_ner_results = {k: v.__dict__ for k, v in ner_results_dict.items()}
-        serializable_triple_results = {k: v.__dict__ for k, v in triple_results_dict.items()}
+        # # logging
+        # serializable_ner_results = {k: v.__dict__ for k, v in ner_results_dict.items()}
+        # serializable_triple_results = {k: v.__dict__ for k, v in triple_results_dict.items()}
 
-        logger.debug(f"ner_results_dict: {json.dumps(serializable_ner_results, indent=4, ensure_ascii=False)}")
-        logger.debug(f"triple_results_dict: {json.dumps(serializable_triple_results, indent=4, ensure_ascii=False)}")
+        # logger.debug(f"ner_results_dict: {json.dumps(serializable_ner_results, indent=4, ensure_ascii=False)}")
+        # logger.debug(f"triple_results_dict: {json.dumps(serializable_triple_results, indent=4, ensure_ascii=False)}")
 
         assert len(chunk_to_rows) == len(ner_results_dict) == len(triple_results_dict), f"len(chunk_to_rows): {len(chunk_to_rows)}, len(ner_results_dict): {len(ner_results_dict)}, len(triple_results_dict): {len(triple_results_dict)}"
 

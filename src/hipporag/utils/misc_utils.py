@@ -13,10 +13,16 @@ from .llm_utils import filter_invalid_triples
 logger = logging.getLogger(__name__)
 
 @dataclass
+class Ner:
+    name: str
+    type: str
+    description: str
+
+@dataclass
 class NerRawOutput:
     chunk_id: str
     response: str
-    unique_entities: List[str]
+    unique_entities: List[Ner]
     metadata: Dict[str, Any]
 
 
