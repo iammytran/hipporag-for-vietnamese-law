@@ -11,8 +11,8 @@ from .openie_openai import OpenIE
 logger = get_logger(__name__)
 
 class GraphRagMSExtractor(OpenIE):
-    def __init__(self, llm):
-        super().__init__(llm)
+    def __init__(self, llm_model):
+        super().__init__(llm_model)
         logger.info("Using GraphRagMSExtractor")
 
     def _create_prompt(self, text: str) -> str:
