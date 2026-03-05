@@ -53,7 +53,7 @@ class GraphRagMSExtractor(OpenIE):
                     {{
                         "name": "Tên thực thể hoặc câu Claim",
                         "type": "Loại thực thể",
-                        "description": "Mô tả thực thể, nội dung, ”
+                        "description": "Mô tả thực thể, nội dung"
                     }}
                 ],
                 "triples": [
