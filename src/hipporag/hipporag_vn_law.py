@@ -63,8 +63,8 @@ class HippoRAGVnLaw(HippoRAG):
             self.openie = VLLMOfflineOpenIE(self.global_config)
         elif self.global_config.openie_mode ==  'Transformers-offline':
             self.openie = TransformersOfflineOpenIEVnLaw(self.global_config)
-        elif self.global_config.openie_mode == 'prompt':
-            self.openie = GraphRagMSExtractor(self.global_config)
+        elif self.global_config.openie_mode == 'graphrag-ms':
+            self.openie = GraphRagMSExtractor(llm_model=self.llm_model)
 
         self.rerank_filter = DSPyFilterVnLaw(self)
 
@@ -87,11 +87,11 @@ class HippoRAGVnLaw(HippoRAG):
 
         self.chunk_embedding_store.insert_strings(docs)
         chunk_to_rows = self.chunk_embedding_store.get_all_id_to_rows()
-        logger.debug(f"chunk_to_rows: {json.dumps(chunk_to_rows, indent=4, ensure_ascii=False)}")
+        # logger.debug(f"chunk_to_rows: {json.dumps(chunk_to_rows, indent=4, ensure_ascii=False)}")
 
         all_openie_info, chunk_keys_to_process = self.load_existing_openie(chunk_to_rows.keys())
         new_openie_rows = {k : chunk_to_rows[k] for k in chunk_keys_to_process}
-        logger.debug(f"new_openie_rows: {json.dumps(new_openie_rows, indent=4, ensure_ascii=False)}")
+        # logger.debug(f"new_openie_rows: {json.dumps(new_openie_rows, indent=4, ensure_ascii=False)}")
 
         if len(chunk_keys_to_process) > 0:
             new_ner_results_dict, new_triple_results_dict = self.openie.batch_openie(new_openie_rows)

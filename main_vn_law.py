@@ -76,7 +76,7 @@ def main():
     parser.add_argument('--force_index_from_scratch', type=str, default='false',
                         help='If set to True, will ignore all existing storage files and graph data and will rebuild from scratch.')
     parser.add_argument('--force_openie_from_scratch', type=str, default='false', help='If set to False, will try to first reuse openie results for the corpus if they exist.')
-    parser.add_argument('--openie_mode', choices=['online', 'offline', 'Transformers-offline', 'prompt'], default='prompt',
+    parser.add_argument('--openie_mode', choices=['online', 'offline', 'Transformers-offline', 'graphrag-ms'], default='graphrag-ms',
                         help="OpenIE mode, offline denotes using VLLM offline batch mode for indexing, while online denotes")
     parser.add_argument('--embedding_batch_size', default=32,
                         help="embedding batch size")
