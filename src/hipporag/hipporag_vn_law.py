@@ -37,7 +37,7 @@ from .utils.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
-class HippoRAG:
+class HippoRAGVnLaw:
 
     def __init__(self,
                  global_config=None,
