@@ -29,13 +29,12 @@ from .prompts.linking import get_query_instruction
 from .prompts.prompt_template_manager import PromptTemplateManager
 from .rerank import DSPyFilter
 from .utils.misc_utils import *
-from .utils.logging_utils import get_logger
 from .utils.misc_utils import NerRawOutput, TripleRawOutput
 from .utils.embed_utils import retrieve_knn
 from .utils.typing import Triple
 from .utils.config_utils import BaseConfig
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 class HippoRAG:
 
@@ -112,7 +111,7 @@ class HippoRAG:
             self.global_config.azure_embedding_endpoint = azure_embedding_endpoint
 
         _print_config = ",\n  ".join([f"{k} = {v}" for k, v in asdict(self.global_config).items()])
-        # logger.debug(f"HippoRAG init with config:\n  {_print_config}\n")
+        logger.debug(f"HippoRAG init with config:\n  {_print_config}\n")
 
         #LLM and embedding model specific working directories are created under every specified saving directories
         llm_label = self.global_config.llm_name.replace("/", "_")
@@ -254,7 +253,6 @@ class HippoRAG:
         chunk_ids = list(chunk_to_rows.keys())
 
         chunk_triples = [[text_processing(t) for t in triple_results_dict[chunk_id].triples] for chunk_id in chunk_ids]
-
         entity_nodes, chunk_triple_entities = extract_entity_nodes(chunk_triples)
         facts = flatten_facts(chunk_triples)
 
@@ -417,10 +415,9 @@ class HippoRAG:
             self.rerank_time += rerank_end - rerank_start
 
             if len(top_k_facts) == 0:
-                logger.info(f'For {query}, no facts found after reranking, return DPR results')
+                logger.info('No facts found after reranking, return DPR results')
                 sorted_doc_ids, sorted_doc_scores = self.dense_passage_retrieval(query)
             else:
-                logger.info(f'For {query}, do graph search')
                 sorted_doc_ids, sorted_doc_scores = self.graph_search_with_fact_entities(query=query,
                                                                                          link_top_k=self.global_config.linking_top_k,
                                                                                          query_fact_scores=query_fact_scores,
@@ -445,7 +442,7 @@ class HippoRAG:
         if gold_docs is not None:
             k_list = [1, 2, 5, 10, 20, 30, 50, 100, 150, 200]
             overall_retrieval_result, example_retrieval_results = retrieval_recall_evaluator.calculate_metric_scores(gold_docs=gold_docs, retrieved_docs=[retrieval_result.docs for retrieval_result in retrieval_results], k_list=k_list)
-            # logger.info(f"Evaluation results for retrieval: {overall_retrieval_result}")
+            logger.info(f"Evaluation results for retrieval: {overall_retrieval_result}")
 
             return retrieval_results, overall_retrieval_result
         else:
@@ -513,7 +510,7 @@ class HippoRAG:
             overall_qa_em_result.update(overall_qa_f1_result)
             overall_qa_results = overall_qa_em_result
             overall_qa_results = {k: round(float(v), 4) for k, v in overall_qa_results.items()}
-            # logger.info(f"Evaluation results for QA: {overall_qa_results}")
+            logger.info(f"Evaluation results for QA: {overall_qa_results}")
 
             # Save retrieval and QA results
             for idx, q in enumerate(queries_solutions):
@@ -590,7 +587,7 @@ class HippoRAG:
             overall_retrieval_result, example_retrieval_results = retrieval_recall_evaluator.calculate_metric_scores(
                 gold_docs=gold_docs, retrieved_docs=[retrieval_result.docs for retrieval_result in retrieval_results],
                 k_list=k_list)
-            # logger.info(f"Evaluation results for retrieval: {overall_retrieval_result}")
+            logger.info(f"Evaluation results for retrieval: {overall_retrieval_result}")
 
             return retrieval_results, overall_retrieval_result
         else:
@@ -658,7 +655,7 @@ class HippoRAG:
             overall_qa_em_result.update(overall_qa_f1_result)
             overall_qa_results = overall_qa_em_result
             overall_qa_results = {k: round(float(v), 4) for k, v in overall_qa_results.items()}
-            # logger.info(f"Evaluation results for QA: {overall_qa_results}")
+            logger.info(f"Evaluation results for QA: {overall_qa_results}")
 
             # Save retrieval and QA results
             for idx, q in enumerate(queries_solutions):
@@ -755,7 +752,6 @@ class HippoRAG:
             current_graph_nodes = set()
 
         logger.info(f"Adding OpenIE triples to graph.")
-        # logger.info(f"current_graph_nodes: {current_graph_nodes}")
 
         for chunk_key, triples in tqdm(zip(chunk_ids, chunk_triples)):
             entities_in_chunk = set()
@@ -766,9 +762,6 @@ class HippoRAG:
 
                     node_key = compute_mdhash_id(content=triple[0], prefix=("entity-"))
                     node_2_key = compute_mdhash_id(content=triple[2], prefix=("entity-"))
-
-                    # logger.debug(f"add_fact_edges_node_key: {node_key}")
-                    # logger.debug(f"add_fact_edges_node_2_key: {node_2_key}")
 
                     self.node_to_node_stats[(node_key, node_2_key)] = self.node_to_node_stats.get(
                         (node_key, node_2_key), 0.0) + 1
@@ -859,8 +852,6 @@ class HippoRAG:
                                                     k=self.global_config.synonymy_edge_topk,
                                                     query_batch_size=self.global_config.synonymy_edge_query_batch_size,
                                                     key_batch_size=self.global_config.synonymy_edge_key_batch_size)
-        
-        logger.debug(f"query_node_key2knn_node_keys: {query_node_key2knn_node_keys}")
 
         num_synonym_triple = 0
         synonym_candidates = []  # [(node key, [(synonym node key, corresponding score), ...]), ...]
@@ -870,7 +861,7 @@ class HippoRAG:
 
             entity = self.entity_id_to_row[node_key]["content"]
 
-            if len(text_processing(entity)) > 2:
+            if len(re.sub('[^A-Za-z0-9]', '', entity)) > 2:
                 nns = query_node_key2knn_node_keys[node_key]
 
                 num_nns = 0
@@ -1026,6 +1017,7 @@ class HippoRAG:
         self.add_new_edges()
 
         logger.info(f"Graph construction completed!")
+        print(self.get_graph_info())
 
     def add_new_nodes(self):
         """
@@ -1044,7 +1036,6 @@ class HippoRAG:
 
         node_to_rows = entity_to_row
         node_to_rows.update(passage_to_row)
-        #logger.debug(f"node_to_rows: {node_to_rows}")
 
         new_nodes = {}
         for node_id, node in node_to_rows.items():
@@ -1054,8 +1045,6 @@ class HippoRAG:
                     if k not in new_nodes:
                         new_nodes[k] = []
                     new_nodes[k].append(v)
-        
-        #logger.debug(f"Adding nodes to graph: {new_nodes}")
 
         if len(new_nodes) > 0:
             self.graph.add_vertices(n=len(next(iter(new_nodes.values()))), attributes=new_nodes)
@@ -1461,12 +1450,12 @@ class HippoRAG:
             fact_score = query_fact_scores[
                 top_k_fact_indices[rank]] if query_fact_scores.ndim > 0 else query_fact_scores
 
-            for phrase in [subject_phrase, object_phrase]: # phrase: ("f[0], f[1]" trong fact)
+            for phrase in [subject_phrase, object_phrase]:
                 phrase_key = compute_mdhash_id(
                     content=phrase,
                     prefix="entity-"
                 )
-                phrase_id = self.node_name_to_vertex_idx.get(phrase_key, None) #phase_key: 1 hash_id
+                phrase_id = self.node_name_to_vertex_idx.get(phrase_key, None)
 
                 if phrase_id is not None:
                     weighted_fact_score = fact_score
@@ -1474,20 +1463,18 @@ class HippoRAG:
                     if len(self.ent_node_to_chunk_ids.get(phrase_key, set())) > 0:
                         weighted_fact_score /= len(self.ent_node_to_chunk_ids[phrase_key])
 
-                    phrase_weights[phrase_id] += weighted_fact_score # dict: (phrase_id: weights)
+                    phrase_weights[phrase_id] += weighted_fact_score
                     number_of_occurs[phrase_id] += 1
 
                 phrases_and_ids.add((phrase, phrase_id))
 
-        # lấy điểm trung bình phrase weights
         phrase_weights /= number_of_occurs
 
         for phrase, phrase_id in phrases_and_ids:
             if phrase not in phrase_scores:
                 phrase_scores[phrase] = []
-            logger.debug(f"phrase: {phrase}")
+
             phrase_scores[phrase].append(phrase_weights[phrase_id])
-        logger.debug(f"phrase_scores: {phrase_scores}")
 
         # calculate average fact score for each phrase
         for phrase, scores in phrase_scores.items():
@@ -1498,8 +1485,6 @@ class HippoRAG:
                                                                            phrase_weights,
                                                                            linking_score_map)  # at this stage, the length of linking_scope_map is determined by link_top_k
 
-        logger.debug(f"linking_score_map: {linking_score_map}")
-
         #Get passage scores according to chosen dense retrieval model
         dpr_sorted_doc_ids, dpr_sorted_doc_scores = self.dense_passage_retrieval(query)
         normalized_dpr_sorted_scores = min_max_normalize(dpr_sorted_doc_scores)
@@ -1508,12 +1493,12 @@ class HippoRAG:
             passage_node_key = self.passage_node_keys[dpr_sorted_doc_id]
             passage_dpr_score = normalized_dpr_sorted_scores[i]
             passage_node_id = self.node_name_to_vertex_idx[passage_node_key]
-            passage_weights[passage_node_id] = passage_dpr_score * passage_node_weight # dict(chunk_id: weights)
+            passage_weights[passage_node_id] = passage_dpr_score * passage_node_weight
             passage_node_text = self.chunk_embedding_store.get_row(passage_node_key)["content"]
-            linking_score_map[passage_node_text] = passage_dpr_score * passage_node_weight # dict(chunk_text: weights)
+            linking_score_map[passage_node_text] = passage_dpr_score * passage_node_weight
 
         #Combining phrase and passage scores into one array for PPR
-        node_weights = phrase_weights + passage_weights # node_weights: dict (node_id: weight); node có thể là phrase hay passage
+        node_weights = phrase_weights + passage_weights
 
         #Recording top 30 facts in linking_score_map
         if len(linking_score_map) > 30:

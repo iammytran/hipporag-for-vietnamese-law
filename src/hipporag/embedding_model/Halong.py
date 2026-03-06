@@ -67,31 +67,24 @@ class HalongEmbeddingModel(BaseEmbeddingModel):
     #     return [text + self.embedding_model.tokenizer.eos_token for text in texts]
 
     def batch_encode(self, texts: List[str], **kwargs) -> None:
-        if isinstance(texts, str): texts = [texts]
+        if isinstance(texts, str): 
+            texts = [texts]
 
         params = deepcopy(self.embedding_config.encode_params)
-        if kwargs: params.update(kwargs)
+        if kwargs: 
+            params.update(kwargs)
 
         instruction = params.pop("instruction", "")
-        if instruction:
-            texts = [f"Instruct: {instruction}\nQuery: {text}" for text in texts]
-            # del params["instruction"]
-
-        logger.debug(f"Batch_encode_instruction: {texts}")
-        
-
+        norm = params.pop("norm", False)
         batch_size = params.pop("batch_size", 16)
-        params.pop("max_length", None)
-        params.pop("num_workers", None)
-        params.pop("norm", None)
 
+        logger.debug(f"Sentences to encode: {texts}")
+        
         logger.debug(f"Calling {self.__class__.__name__} with:\n{params}")
-        results = self.embedding_model.encode(sentences=texts, batch_size=batch_size, **params)
+        results = self.embedding_model.encode(sentences=texts, prompt=instruction, batch_size=batch_size, show_progress_bar=True, normalize_embeddings=norm)
 
         if isinstance(results, torch.Tensor):
             results = results.cpu()
             results = results.numpy()
-        if self.embedding_config.norm:
-            results = (results.T / np.linalg.norm(results, axis=1)).T
 
         return results

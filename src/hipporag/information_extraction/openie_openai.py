@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Dict, Any, List, TypedDict, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
-import os
 
 from ..prompts import PromptTemplateManager
 from ..utils.logging_utils import get_logger
@@ -41,13 +40,10 @@ class OpenIE:
         # Init prompt template manager
         self.prompt_template_manager = PromptTemplateManager(role_mapping={"system": "system", "user": "user", "assistant": "assistant"})
         self.llm_model = llm_model
-        logger.info("openIE by openAI")
 
     def ner(self, chunk_key: str, passage: str) -> NerRawOutput:
         # PREPROCESSING
         ner_input_message = self.prompt_template_manager.render(name='ner_vietnamese_law', passage=passage)
-        
-        logger.debug(f"ner_prompt: {ner_input_message}")
         raw_response = ""
         metadata = {}
         try:
@@ -55,7 +51,6 @@ class OpenIE:
             raw_response, metadata, cache_hit = self.llm_model.infer(
                 messages=ner_input_message,
             )
-            
             metadata['cache_hit'] = cache_hit
             if metadata['finish_reason'] == 'length':
                 real_response = fix_broken_generated_json(raw_response)
@@ -63,9 +58,6 @@ class OpenIE:
                 real_response = raw_response
             extracted_entities = _extract_ner_from_response(real_response)
             unique_entities = list(dict.fromkeys(extracted_entities))
-            logger.debug(f"ner_raw_response: {raw_response}")
-            logger.debug(f"ner_extracted_entities: {extracted_entities}")
-            logger.debug(f"ner_unique_entities: {unique_entities}")
 
         except Exception as e:
             # For any other unexpected exceptions, log them and return with the error message
@@ -100,9 +92,6 @@ class OpenIE:
             passage=passage,
             named_entity_json=json.dumps({"named_entities": named_entities})
         )
-        logger.debug(f"triple_extraction_prompt_passage: {passage}")
-        logger.debug(f"triple_extraction_prompt_named_entities: {named_entities}")
-        logger.debug(f"triple_extraction_prompt: {messages}")
 
         raw_response = ""
         metadata = {}
@@ -118,9 +107,6 @@ class OpenIE:
                 real_response = raw_response
             extracted_triples = _extract_triples_from_response(real_response)
             triplets = filter_invalid_triples(triples=extracted_triples)
-
-            logger.debug(f"triple_extraction_raw_response: {raw_response}")
-            logger.debug(f"triple_extraction_extracted_triples: {extracted_triples}")
 
         except Exception as e:
             logger.warning(f"Exception for chunk {chunk_key}: {e}")
@@ -219,29 +205,5 @@ class OpenIE:
 
         ner_results_dict = {res.chunk_id: res for res in ner_results_list}
         triple_results_dict = {res.chunk_id: res for res in triple_results_list}
-
-        # --- THÊM CODE ĐỂ DEBUG ---
-        # Lưu kết quả NER và Triple vào thư mục 'outputs' để kiểm tra
-        try:
-            output_dir = "outputs"
-            # Dòng os.makedirs sẽ không làm gì nếu thư mục đã tồn tại
-            os.makedirs(output_dir, exist_ok=True)
-
-            # Tạo đường dẫn đầy đủ đến file debug NER
-            ner_debug_path = os.path.join(output_dir, "debug_ner_results.json")
-            ner_to_save = {chunk_id: ner_output.__dict__ for chunk_id, ner_output in ner_results_dict.items()}
-            with open(ner_debug_path, "w", encoding="utf-8") as f:
-                json.dump(ner_to_save, f, ensure_ascii=False, indent=4)
-            logger.info(f"Đã lưu kết quả NER vào file: {ner_debug_path}")
-
-            # Tạo đường dẫn đầy đủ đến file debug Triple
-            triple_debug_path = os.path.join(output_dir, "debug_triple_results.json")
-            triple_to_save = {chunk_id: triple_output.__dict__ for chunk_id, triple_output in triple_results_dict.items()}
-            with open(triple_debug_path, "w", encoding="utf-8") as f:
-                json.dump(triple_to_save, f, ensure_ascii=False, indent=4)
-            logger.info(f"Đã lưu kết quả Triple vào file: {triple_debug_path}")
-        except Exception as e:
-            logger.error(f"Lỗi khi lưu file JSON để debug: {e}")
-        # --- KẾT THÚC CODE DEBUG ---
 
         return ner_results_dict, triple_results_dict

@@ -11,13 +11,12 @@ def get_query_instruction(linking_method):
 
 def get_query_instruction_vn(linking_method):
     instructions = {
-        'ner_to_node': 'Cho một cụm từ, truy xuất các cụm từ đồng nghĩa hoặc có liên quan phù hợp nhất với cụm từ này.',
-        'query_to_node': 'Cho một câu hỏi, truy xuất các cụm từ có liên quan được đề cập trong câu hỏi này.',
-        'query_to_fact': 'Cho một câu hỏi, truy xuất các bộ ba dữ kiện có liên quan phù hợp với câu hỏi này.',
-        'query_to_sentence': 'Cho một câu hỏi, truy xuất các câu có liên quan trả lời câu hỏi một cách tốt nhất.',
-        'query_to_passage': 'Cho một câu hỏi, truy xuất các tài liệu có liên quan trả lời câu hỏi một cách tốt nhất.',
-        "fact_query_to_fact": "Cho một bộ ba đại diện cho một mối quan hệ, truy xuất các bộ ba có liên quan phù hợp nhất với bộ ba này."
+        'ner_to_node': 'Tìm các thuật ngữ pháp lý đồng nghĩa hoặc có liên quan chặt chẽ với cụm từ sau.',
+        'query_to_node': 'Trích xuất các thuật ngữ pháp lý và khái niệm trọng tâm xuất hiện trong câu hỏi sau.',
+        'query_to_fact': 'Xác định các thực thể, hành vi và mối quan hệ pháp lý trọng tâm được đề cập và có liên quan để trả lời câu hỏi sau.',
+        'query_to_sentence': 'Truy xuất các quy định hoặc trích dẫn luật pháp giải quyết trực tiếp vấn đề sau.',
+        'query_to_passage': 'Truy xuất các tài liệu pháp luật có liên quan để trả lời câu hỏi sau.',
     }
-    default_instruction = 'Cho một câu hỏi, truy xuất các tài liệu có liên quan trả lời câu hỏi một cách tốt nhất.'
+    default_instruction = 'Truy xuất các tài liệu pháp luật có liên quan để trả lời câu hỏi sau.'
     return instructions.get(linking_method, default_instruction)
     
